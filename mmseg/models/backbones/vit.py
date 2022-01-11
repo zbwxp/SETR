@@ -10,11 +10,13 @@ from .helpers import load_pretrained
 # from .layers import DropPath, to_2tuple, trunc_normal_
 
 from ..builder import BACKBONES
-
+import os
 
 def _cfg(url='', **kwargs):
+    path = os.getcwd()
     return {
         'url': url,
+        'pretrained_finetune': path + "/pretrained/jx_vit_large_p16_384-b3be5167.pth",
         'num_classes': 1000, 'input_size': (3, 224, 224), 'pool_size': None,
         'crop_pct': .9, 'interpolation': 'bicubic',
         'mean': (0.485, 0.456, 0.406), 'std': (0.229, 0.224, 0.225),
