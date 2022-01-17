@@ -128,7 +128,7 @@ class VisionTransformerUpHead(BaseDecodeHead):
     def forward(self, x):
         x = self._transform_inputs(x)
         if x.dim() == 3:
-            if x.shape[1] % 48 != 0:
+            if x.shape[1] % 32 != 0:
                 x = x[:, 1:]
             x = self.norm(x)
 

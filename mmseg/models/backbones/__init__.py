@@ -6,6 +6,9 @@
 # from .resnext import ResNeXt
 from .vit import VisionTransformer
 from .vit_mla import VIT_MLA
+from .vit_bottle import Vit_Bottleneck
+from .vit_downsample import Vit_Downsample
+
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
 ]
