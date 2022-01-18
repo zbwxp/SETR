@@ -26,12 +26,12 @@ class Vit_Bottleneck(VisionTransformer):
         self.num_queries = ziper_query
         hidden_dim = kwargs['embed_dim']
 
-        self.ziper_query_embed = nn.Embedding(self.num_queries, hidden_dim)
+        self.zip_query_embed = nn.Embedding(self.num_queries, hidden_dim)
 
         N_steps = hidden_dim // 2
-        self.zippee_pe_layer = PositionEmbeddingSine(N_steps, normalize=True)
+        self.zip_pe_layer = PositionEmbeddingSine(N_steps, normalize=True)
         sr_ratio = self.num_queries // 1024
-        self.transformer = Transformer(
+        self.zip_transformer = Transformer(
             d_model=hidden_dim,
             dropout=0.1,
             nhead=8,
@@ -66,11 +66,11 @@ class Vit_Bottleneck(VisionTransformer):
                     x = x[:, 1:]
                     n, hw, c = x.shape
                     h = w = int(math.sqrt(hw))
-                    pos = self.zippee_pe_layer(x.transpose(1, 2).reshape(n, c, h, w))
+                    pos = self.zip_pe_layer(x.transpose(1, 2).reshape(n, c, h, w))
                     pos = pos.flatten(2).transpose(1, 2)
                 src = x
                 mask = None
-                hs, memory = self.transformer(src, mask, self.ziper_query_embed.weight, pos)
+                hs, memory = self.zip_transformer(src, mask, self.zip_query_embed.weight, pos)
                 x = hs[0]
             x = blk(x)
             if i in self.out_indices:
