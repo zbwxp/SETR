@@ -99,5 +99,5 @@ lr_config = dict(_delete_=True, policy='poly',
 crop_size = (img_size, img_size)
 test_cfg = dict(mode='slide', crop_size=crop_size, stride=(341, 341))
 find_unused_parameters = True
-data = dict(samples_per_gpu=4)
+data = dict(samples_per_gpu=2)
 evaluation = dict(interval=4000, metric='mIoU')

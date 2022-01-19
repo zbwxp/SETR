@@ -90,6 +90,9 @@ optimizer = dict(_delete_=True, type='AdamW', lr=0.00006, betas=(0.9, 0.999), we
                                                  'head': dict(lr_mult=10.),
                                                  }))
 
+optimizer_config = dict(
+    _delete_=True, grad_clip=dict(max_norm=35, norm_type=2))
+
 lr_config = dict(_delete_=True, policy='poly',
                  warmup='linear',
                  warmup_iters=1500,
