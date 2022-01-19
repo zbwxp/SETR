@@ -9,7 +9,7 @@ from ..builder import HEADS
 from .decode_head import BaseDecodeHead
 
 from mmcv.cnn import build_norm_layer
-
+import torch
 
 
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
