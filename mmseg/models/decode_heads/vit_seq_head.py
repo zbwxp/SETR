@@ -10,9 +10,9 @@ from .decode_head import BaseDecodeHead
 
 from mmcv.cnn import build_norm_layer
 import torch
-from .vit_up_head import VisionTransformerUpHead
+from .vit_up_head import VisionTransformerUpHead, trunc_normal_
 from ..utils.positional_encoding import PositionEmbeddingSine
-from ..utils.transformer import Transformer, Conv2d
+from ..utils.transformer import Transformer
 
 @HEADS.register_module()
 class vit_seq_head(VisionTransformerUpHead):
@@ -48,6 +48,7 @@ class vit_seq_head(VisionTransformerUpHead):
         )
         if self.in_channels != hidden_dim:
             self.input_proj = nn.Linear(self.in_channels, hidden_dim)
+            trunc_normal_(self.input_proj.weight, std=.02)
         else:
             self.input_proj = nn.Sequential()
 
