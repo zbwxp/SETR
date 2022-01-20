@@ -20,6 +20,7 @@ from .vit_up_head import VisionTransformerUpHead
 from .vit_mla_head import VIT_MLAHead
 from .vit_mla_auxi_head import VIT_MLA_AUXIHead
 from .vit_seq_head import vit_seq_head
+from .vit_seq_head_pos import vit_seq_head_pos
 # from .seq_head import Seq_Head
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
