@@ -37,7 +37,7 @@ class EncoderDecoder(BaseSegmentor):
         self.test_cfg = test_cfg
 
         self.init_weights(pretrained=pretrained)
-        self._iter = 0
+
         assert self.with_decode_head
 
     def _init_decode_head(self, decode_head):
@@ -116,11 +116,10 @@ class EncoderDecoder(BaseSegmentor):
         losses = dict()
         if isinstance(self.auxiliary_head, nn.ModuleList):
             for idx, aux_head in enumerate(self.auxiliary_head):
-                if idx < 1 or self._iter < 500:
-                    loss_aux = aux_head.forward_train(x, img_metas,
-                                                      gt_semantic_seg,
-                                                      self.train_cfg)
-                    losses.update(add_prefix(loss_aux, f'aux_{idx}'))
+                loss_aux = aux_head.forward_train(x, img_metas,
+                                                  gt_semantic_seg,
+                                                  self.train_cfg)
+                losses.update(add_prefix(loss_aux, f'aux_{idx}'))
         else:
             loss_aux = self.auxiliary_head.forward_train(
                 x, img_metas, gt_semantic_seg, self.train_cfg)
@@ -150,7 +149,7 @@ class EncoderDecoder(BaseSegmentor):
         Returns:
             dict[str, Tensor]: a dictionary of loss components
         """
-        self._iter += 1
+
         x = self.extract_feat(img)
 
         losses = dict()
