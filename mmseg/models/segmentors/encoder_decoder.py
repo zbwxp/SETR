@@ -116,7 +116,7 @@ class EncoderDecoder(BaseSegmentor):
         losses = dict()
         if isinstance(self.auxiliary_head, nn.ModuleList):
             for idx, aux_head in enumerate(self.auxiliary_head):
-                if idx > 0 and self._iter < 500:
+                if idx < 1 or self._iter < 500:
                     loss_aux = aux_head.forward_train(x, img_metas,
                                                       gt_semantic_seg,
                                                       self.train_cfg)
