@@ -21,7 +21,7 @@ class vit_seq_head(VisionTransformerUpHead):
                  zipee_pos_style=None,
                  ziper_query=1024,
                  num_ziper_layer=3,
-                 use_attn=True,
+                 use_attn=False,
                  **kwargs):
         super(vit_seq_head, self).__init__(**kwargs)
 
