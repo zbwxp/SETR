@@ -37,7 +37,7 @@ class vit_seq_head(VisionTransformerUpHead):
         self.zip_transformer = Transformer(
             d_model=hidden_dim,
             dropout=0.1,
-            nhead=8,
+            nhead=12,
             dim_feedforward=hidden_dim * 4,
             num_encoder_layers=0,
             num_decoder_layers=num_ziper_layer,
