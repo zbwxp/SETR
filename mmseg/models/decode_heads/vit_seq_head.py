@@ -57,7 +57,8 @@ class vit_seq_head(VisionTransformerUpHead):
         pos = torch.zeros_like(src)
         mask = None
         bs = x.size()[0]
-        attn = input[-1][-1].permute(-1, 0, 1)[1:, ...]
+        if isinstance(input[-1], list):
+            attn = input[-1][-1].permute(-1, 0, 1)[1:, ...]
         if self.use_attn:
             query_embed = self.zip_query_embed.weight.unsqueeze(1).repeat(1, bs, 1) + attn
         else:
