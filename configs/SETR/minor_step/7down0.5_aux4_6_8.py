@@ -9,6 +9,7 @@ in_channels = 768
 model = dict(
     backbone=dict(
         type='Vit_Bottleneck',
+        ziper_query=512,
         model_name='vit_base_patch16_384',
         depth=12,
         embed_dim=in_channels,

@@ -8,7 +8,7 @@ img_size = 512
 in_channels = 768
 model = dict(
     backbone=dict(
-        type='Vit_Bottleneck',
+        type='Vit_VT',
         model_name='vit_base_patch16_384',
         depth=12,
         embed_dim=in_channels,
@@ -19,9 +19,8 @@ model = dict(
         drop_rate=0.,
         num_classes=150),
     decode_head=dict(
-        type='vit_seq_head',
         in_channels=in_channels,
-        embed_dim=in_channels//4,
+        embed_dim=in_channels,
         in_index=11,
         img_size=img_size,
         align_corners=False,
@@ -34,7 +33,7 @@ model = dict(
         type='VisionTransformerUpHead',
         in_channels=in_channels,
         channels=512,
-        in_index=4,
+        in_index=5,
         img_size=img_size,
         embed_dim=in_channels,
         num_classes=150,
@@ -49,7 +48,7 @@ model = dict(
             type='VisionTransformerUpHead',
             in_channels=in_channels,
             channels=512,
-            in_index=6,
+            in_index=7,
             img_size=img_size,
             embed_dim=in_channels,
             num_classes=150,
@@ -61,13 +60,12 @@ model = dict(
             loss_decode=dict(
                 type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
         dict(
-            type='vit_seq_head',
-            ziper_query=256,
+            type='VisionTransformerUpHead',
             in_channels=in_channels,
             channels=512,
-            in_index=8,
+            in_index=9,
             img_size=img_size,
-            embed_dim=in_channels // 4,
+            embed_dim=in_channels,
             num_classes=150,
             norm_cfg=norm_cfg,
             num_conv=2,
@@ -96,9 +94,8 @@ lr_config = dict(_delete_=True, policy='poly',
                  warmup_ratio=1e-6,
                  power=1.0, min_lr=0.0, by_epoch=False)
 
-
 crop_size = (img_size, img_size)
 test_cfg = dict(mode='slide', crop_size=crop_size, stride=(341, 341))
 find_unused_parameters = True
-data = dict(samples_per_gpu=4)
+data = dict(samples_per_gpu=2)
 evaluation = dict(interval=4000, metric='mIoU')
