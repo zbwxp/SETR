@@ -1,18 +1,16 @@
-import torch.nn as nn
-import torch.nn.functional as F
-from functools import partial
 import math
 
-# from .layers import trunc_normal_
-
-from ..builder import HEADS
-from .decode_head import BaseDecodeHead
-
-from mmcv.cnn import build_norm_layer
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 from .vit_up_head import VisionTransformerUpHead, trunc_normal_
+from ..builder import HEADS
 from ..utils.positional_encoding import PositionEmbeddingSine
 from ..utils.transformer import Transformer
+from functools import partial
+
+# from .layers import trunc_normal_
 
 @HEADS.register_module()
 class vit_seq_head(VisionTransformerUpHead):
@@ -23,13 +21,14 @@ class vit_seq_head(VisionTransformerUpHead):
                  zipee_pos_style=None,
                  ziper_query=1024,
                  num_ziper_layer=3,
+                 use_attn=True,
                  **kwargs):
         super(vit_seq_head, self).__init__(**kwargs)
 
         self.pos_style = zipee_pos_style
         self.num_queries = ziper_query
         hidden_dim = kwargs['embed_dim']
-
+        self.use_attn = use_attn
         self.zip_query_embed = nn.Embedding(self.num_queries, hidden_dim)
 
         N_steps = hidden_dim // 2
@@ -38,7 +37,7 @@ class vit_seq_head(VisionTransformerUpHead):
         self.zip_transformer = Transformer(
             d_model=hidden_dim,
             dropout=0.1,
-            nhead=12,
+            nhead=8,
             dim_feedforward=hidden_dim * 4,
             num_encoder_layers=0,
             num_decoder_layers=num_ziper_layer,
@@ -52,13 +51,18 @@ class vit_seq_head(VisionTransformerUpHead):
         else:
             self.input_proj = nn.Sequential()
 
-
-    def forward(self, x):
-        x = self._transform_inputs(x)
+    def forward(self, input):
+        x = self._transform_inputs(input)
         src = self.input_proj(x)
         pos = torch.zeros_like(src)
         mask = None
-        hs, memory = self.zip_transformer(src, mask, self.zip_query_embed.weight, pos)
+        bs = x.size()[0]
+        attn = input[-1][-1].permute(-1, 0, 1)[1:, ...]
+        if self.use_attn:
+            query_embed = self.zip_query_embed.weight.unsqueeze(1).repeat(1, bs, 1) + attn
+        else:
+            query_embed = self.zip_query_embed.weight
+        hs, memory = self.zip_transformer(src, mask, query_embed, pos)
         x = hs[0]
 
         if x.dim() == 3:
@@ -78,7 +82,7 @@ class vit_seq_head(VisionTransformerUpHead):
                     x = self.syncbn_fc_0(x)
                     x = F.relu(x, inplace=True)
                     x = F.interpolate(
-                        x, size=x.shape[-1]*4, mode='bilinear', align_corners=self.align_corners)
+                        x, size=x.shape[-1] * 4, mode='bilinear', align_corners=self.align_corners)
                     x = self.conv_1(x)
                     x = F.interpolate(
                         x, size=self.img_size, mode='bilinear', align_corners=self.align_corners)
@@ -95,22 +99,22 @@ class vit_seq_head(VisionTransformerUpHead):
                     x = self.syncbn_fc_0(x)
                     x = F.relu(x, inplace=True)
                     x = F.interpolate(
-                        x, size=x.shape[-1]*2, mode='bilinear', align_corners=self.align_corners)
+                        x, size=x.shape[-1] * 2, mode='bilinear', align_corners=self.align_corners)
                     x = self.conv_1(x)
                     x = self.syncbn_fc_1(x)
                     x = F.relu(x, inplace=True)
                     x = F.interpolate(
-                        x, size=x.shape[-1]*2, mode='bilinear', align_corners=self.align_corners)
+                        x, size=x.shape[-1] * 2, mode='bilinear', align_corners=self.align_corners)
                     x = self.conv_2(x)
                     x = self.syncbn_fc_2(x)
                     x = F.relu(x, inplace=True)
                     x = F.interpolate(
-                        x, size=x.shape[-1]*2, mode='bilinear', align_corners=self.align_corners)
+                        x, size=x.shape[-1] * 2, mode='bilinear', align_corners=self.align_corners)
                     x = self.conv_3(x)
                     x = self.syncbn_fc_3(x)
                     x = F.relu(x, inplace=True)
                     x = self.conv_4(x)
                     x = F.interpolate(
-                        x, size=x.shape[-1]*2, mode='bilinear', align_corners=self.align_corners)
+                        x, size=x.shape[-1] * 2, mode='bilinear', align_corners=self.align_corners)
 
         return x

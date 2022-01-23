@@ -70,9 +70,10 @@ class Vit_Bottleneck(VisionTransformer):
                     pos = pos.flatten(2).transpose(1, 2)
                 src = x
                 mask = None
-                hs, memory = self.zip_transformer(src, mask, self.zip_query_embed.weight, pos)
+                hs, attn = self.zip_transformer(src, mask, self.zip_query_embed.weight, pos)
                 x = hs[0]
             x = blk(x)
             if i in self.out_indices:
                 outs.append(x)
+        outs.append(attn)
         return tuple(outs)

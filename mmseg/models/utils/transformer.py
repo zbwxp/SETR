@@ -71,19 +71,20 @@ class Transformer(nn.Module):
             src = src.permute(1, 0, -1)
             pos_embed = pos_embed.permute(1, 0, -1)
 
-        query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
+        if len(query_embed.size()) == 2:
+            query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
         if mask is not None:
             mask = mask.flatten(1)
 
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
-        hs = self.decoder(
+        hs, attn = self.decoder(
             tgt, memory, memory_key_padding_mask=mask, pos=pos_embed, query_pos=query_embed
         )
         if len(src.size()) == 4:
             return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
         else:
-            return hs.transpose(1, 2), None
+            return hs.transpose(1, 2), attn
 
 
 class TransformerEncoder(nn.Module):
@@ -135,9 +136,10 @@ class TransformerDecoder(nn.Module):
         output = tgt
 
         intermediate = []
+        attns = []
 
         for layer in self.layers:
-            output = layer(
+            output, attn = layer(
                 output,
                 memory,
                 tgt_mask=tgt_mask,
@@ -149,7 +151,7 @@ class TransformerDecoder(nn.Module):
             )
             if self.return_intermediate:
                 intermediate.append(self.norm(output))
-
+            attns.append(attn)
         if self.norm is not None:
             output = self.norm(output)
             if self.return_intermediate:
@@ -157,9 +159,9 @@ class TransformerDecoder(nn.Module):
                 intermediate.append(output)
 
         if self.return_intermediate:
-            return torch.stack(intermediate)
+            return torch.stack(intermediate), attns
 
-        return output.unsqueeze(0)
+        return output.unsqueeze(0), attns
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -305,19 +307,19 @@ class TransformerDecoderLayer(nn.Module):
         )[0]
         tgt = tgt + self.dropout1(tgt2)
         tgt = self.norm1(tgt)
-        tgt2 = self.multihead_attn(
+        tgt2, attn2 = self.multihead_attn(
             query=self.with_pos_embed(tgt, query_pos),
             key=self.with_pos_embed(memory, pos),
             value=memory,
             attn_mask=memory_mask,
             key_padding_mask=memory_key_padding_mask,
-        )[0]
+        )
         tgt = tgt + self.dropout2(tgt2)
         tgt = self.norm2(tgt)
         tgt2 = self.linear2(self.dropout(self.activation(self.linear1(tgt))))
         tgt = tgt + self.dropout3(tgt2)
         tgt = self.norm3(tgt)
-        return tgt
+        return tgt, attn2
 
     def forward_pre(
             self,
