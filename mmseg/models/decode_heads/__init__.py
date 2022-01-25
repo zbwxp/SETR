@@ -22,6 +22,7 @@ from .vit_mla_auxi_head import VIT_MLA_AUXIHead
 from .vit_seq_head import vit_seq_head
 from .vit_seq_head_pos import vit_seq_head_pos
 from .vt_head import vt_head
+from .vt_head_direct import vt_head_direct
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
 ]
