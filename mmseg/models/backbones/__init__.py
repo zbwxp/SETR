@@ -11,6 +11,7 @@ from .vit_downsample import Vit_Downsample
 from .vit_VT import Vit_VT
 from .vit_vt_hg import Vit_vt_hourglass
 from .vit_conv_hg import Vit_conv_hourglass
+from .vit_vt_hg_res import Vit_vt_hourglass_res
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
