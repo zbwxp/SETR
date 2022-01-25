@@ -3,7 +3,7 @@ _base_ = [
     '../../_base_/datasets/ade20k.py', '../../_base_/default_runtime.py',
     '../../_base_/schedules/schedule_160k.py'
 ]
-norm_cfg = dict(type='BN', requires_grad=True)
+norm_cfg = dict(type='SyncBN', requires_grad=True)
 img_size = 512
 in_channels = 768
 model = dict(
@@ -96,5 +96,5 @@ lr_config = dict(_delete_=True, policy='poly',
 crop_size = (img_size, img_size)
 test_cfg = dict(mode='slide', crop_size=crop_size, stride=(341, 341))
 find_unused_parameters = True
-data = dict(samples_per_gpu=2)
+data = dict(samples_per_gpu=4)
 evaluation = dict(interval=4000, metric='mIoU')
