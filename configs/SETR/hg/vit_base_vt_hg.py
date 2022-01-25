@@ -3,7 +3,7 @@ _base_ = [
     '../../_base_/datasets/ade20k.py', '../../_base_/default_runtime.py',
     '../../_base_/schedules/schedule_160k.py'
 ]
-norm_cfg = dict(type='SyncBN', requires_grad=True)
+norm_cfg = dict(type='BN', requires_grad=True)
 img_size = 512
 in_channels = 768
 model = dict(
@@ -19,10 +19,8 @@ model = dict(
         drop_rate=0.,
         num_classes=150),
     decode_head=dict(
-        type='vt_head',
         in_channels=in_channels,
-        embed_dim=in_channels // 4,
-        num_ziper_layer=3,
+        embed_dim=in_channels,
         in_index=11,
         img_size=img_size,
         align_corners=False,
@@ -98,5 +96,5 @@ lr_config = dict(_delete_=True, policy='poly',
 crop_size = (img_size, img_size)
 test_cfg = dict(mode='slide', crop_size=crop_size, stride=(341, 341))
 find_unused_parameters = True
-data = dict(samples_per_gpu=4)
+data = dict(samples_per_gpu=2)
 evaluation = dict(interval=4000, metric='mIoU')
