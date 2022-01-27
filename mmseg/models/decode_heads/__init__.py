@@ -26,6 +26,7 @@ from .vt_head_direct import vt_head_direct
 from .vt_downup import vt_downup
 from .vit_seq_head_downup import vit_seq_head_downup
 from .vit_up_head_transpose import VisionTransformerUpHead_transpose
+from .vit_up_head_reverse import VisionTransformerUpHead_reverse
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
 ]
