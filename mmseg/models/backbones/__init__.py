@@ -13,6 +13,7 @@ from .vit_vt_hg import Vit_vt_hourglass
 from .vit_conv_hg import Vit_conv_hourglass
 from .vit_vt_hg_res import Vit_vt_hourglass_res
 from .vit_vt_hg_res_v2 import Vit_vt_hourglass_res_v2
+from .vit_pos import Vit_pos
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
