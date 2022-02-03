@@ -35,7 +35,7 @@ class vit_seq_head_pos_learnable(VisionTransformerUpHead):
         N_steps = hidden_dim // 2
         self.zip_pe_layer = PositionEmbeddingSine(N_steps, normalize=True)
         self.zip_pos_embed = nn.Parameter(torch.zeros(
-            1, ziper_query, hidden_dim))
+            1, self.num_queries + 1, kwargs['embed_dim']))
         sr_ratio = self.num_queries // 1024
         self.zip_transformer = Transformer(
             d_model=hidden_dim,
@@ -59,9 +59,6 @@ class vit_seq_head_pos_learnable(VisionTransformerUpHead):
         x = self._transform_inputs(x)
         x = self.input_proj(x)
         pos = self.zip_pos_embed
-        if x.dim() == 3:
-            if x.shape[1] % 32 != 0:
-                x = x[:, 1:]
 
         src = x
         mask = None
@@ -70,6 +67,9 @@ class vit_seq_head_pos_learnable(VisionTransformerUpHead):
 
         if self.upsampling_method == 'bilinear':
             if x.dim() == 3:
+                if x.shape[1] % 32 != 0:
+                    x = x[:, 1:]
+
                 n, hw, c = x.shape
                 h = w = int(math.sqrt(hw))
                 x = x.transpose(1, 2).reshape(n, c, h, w)
