@@ -28,6 +28,7 @@ from .vit_seq_head_downup import vit_seq_head_downup
 from .vit_up_head_transpose import VisionTransformerUpHead_transpose
 from .vit_up_head_reverse import VisionTransformerUpHead_reverse
 from .vit_seq_head_pos_learn import vit_seq_head_pos_learnable
+from .vit_seq_head_pos_sincos import vit_seq_head_pos_sincos
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
 ]
