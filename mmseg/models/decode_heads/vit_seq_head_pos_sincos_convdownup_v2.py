@@ -121,8 +121,6 @@ class vit_seq_head_pos_sincos_convdownup_v2(VisionTransformerUpHead):
         x = hs[0]
 
         if self.upsampling_method == 'bilinear':
-
-
             if x.dim() == 3:
                 n, hw, c = x.shape
                 h = w = int(math.sqrt(hw))
