@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 from .vit_up_head import VisionTransformerUpHead, trunc_normal_
 from ..builder import HEADS
-
+from ..backbones.vit_VT import FilterTokenizer
 
 # from .layers import trunc_normal_
 
@@ -35,7 +35,7 @@ class PositionalEncoding(nn.Module):
 
 
 @HEADS.register_module()
-class vit_rand_clean(VisionTransformerUpHead):
+class vit_vt_clean(VisionTransformerUpHead):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
 
@@ -47,13 +47,20 @@ class vit_rand_clean(VisionTransformerUpHead):
                  num_expand_layer=3,
                  num_heads=12,
                  **kwargs):
-        super(vit_rand_clean, self).__init__(**kwargs)
+        super(vit_vt_clean, self).__init__(**kwargs)
 
         self.pos_style = zipee_pos_style
         self.num_queries = ziper_query
+        self.down = FilterTokenizer(
+            in_channels=kwargs['embed_dim'],
+            token_channels=kwargs['embed_dim'],
+            tokens=256,
+        )
         dim = kwargs['embed_dim']
         decoder_layer = nn.TransformerDecoderLayer(d_model=dim, nhead=num_heads, dim_feedforward=dim * 4)
+        # self.down_decoder = nn.TransformerDecoder(decoder_layer, num_expand_layer)
         self.up_decoder = nn.TransformerDecoder(decoder_layer, num_expand_layer)
+        # self.zip_query_embed = nn.Embedding(self.num_queries, dim)
         self.expand_query_embed = nn.Embedding(expand_query, dim)
 
         self.zip_pos_embed = PositionalEncoding(kwargs['embed_dim'], 1024)
@@ -73,10 +80,9 @@ class vit_rand_clean(VisionTransformerUpHead):
                 x = x[:, 1:]
         # down
         x += self.zip_pos_embed.pos_table.clone().detach()
-        # pick rand token
-        idx = torch.randint(0, 1024, (256, ))
-        down_x = x[:, idx]
+
         # input tgt and memory must be in shape of [token_length, bs, ch]
+        down_x = self.down(x)
 
         up_x = self.up_decoder(
             self.expand_query_embed.weight.repeat(bs, 1, 1).transpose(0, 1),
