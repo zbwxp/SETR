@@ -41,6 +41,8 @@ from .vit_seq_downup import vit_seq_downup
 from .vit_seq_clean import vit_seq_clean
 from .vit_seq_clean_single_decoder import vit_seq_clean_single_decoder
 from .vit_rand_clean import vit_rand_clean
+from .vit_seq_clean_with_norm import vit_seq_clean_with_norm
+from .vit_seq_clean_with_norm_single import vit_seq_clean_with_norm_single
 
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
