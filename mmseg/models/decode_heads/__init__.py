@@ -38,6 +38,7 @@ from .vit_rand_2x_down_sincos1024 import vit_rand_2x_down
 from .vit_rand_4x_down_sincos1024 import vit_rand_4x_down
 from .vit_rand_pos import vit_rand_pos
 from .vit_seq_downup import vit_seq_downup
+from .vit_seq_clean import vit_seq_clean
 
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
