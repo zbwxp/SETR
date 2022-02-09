@@ -40,6 +40,7 @@ from .vit_rand_pos import vit_rand_pos
 from .vit_seq_downup import vit_seq_downup
 from .vit_seq_clean import vit_seq_clean
 from .vit_seq_clean_single_decoder import vit_seq_clean_single_decoder
+from .vit_rand_clean import vit_rand_clean
 
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
