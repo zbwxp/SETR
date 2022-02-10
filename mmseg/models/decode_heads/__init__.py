@@ -46,6 +46,8 @@ from .vit_seq_clean_with_norm_single import vit_seq_clean_with_norm_single
 from .vit_vt_clean import vit_vt_clean
 from .vit_seq_clean_fix_down import vit_seq_clean_fix_down
 from .vit_seq_clean_zero_down import vit_seq_clean_zero_down
+from .vit_seq_clean_all_zero import vit_seq_clean_all_zero
+
 
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
