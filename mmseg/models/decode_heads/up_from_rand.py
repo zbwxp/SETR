@@ -75,7 +75,11 @@ class up_from_rand(VisionTransformerUpHead):
                 x = x[:, 1:]
         # pick rand token
         if self.use_idx:
-            x += self.zip_pos_embed.pos_table.clone().detach()[:, idx]
+            if len(idx.size()) == 1:
+                x += self.zip_pos_embed.pos_table.clone().detach()[:, idx]
+            else:
+                pos = self.zip_pos_embed.pos_table.clone().detach()
+                x += torch.stack([p_[id_] for p_, id_ in zip(pos, idx)])
 
         up_x = self.up_decoder(
             self.expand_query_embed.weight.repeat(bs, 1, 1).transpose(0, 1),
