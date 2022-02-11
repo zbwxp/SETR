@@ -51,6 +51,7 @@ from .vit_clean_base import vit_clean_base
 from .vit_fc_clean import vit_fc_clean
 from .vit_rand_clean_no_pos import vit_rand_clean_no_pos
 from .up_from_rand import up_from_rand
+from .vit_cond_rand_clean import vit_cond_rand_clean
 
 
 
