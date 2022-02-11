@@ -20,6 +20,7 @@ model = dict(
     decode_head=dict(
         type='vit_clean_base',
         expand_query=4096,
+        num_expand_layer=2,
         in_channels=in_channels,
         embed_dim=in_channels // 4,
         in_index=7,
