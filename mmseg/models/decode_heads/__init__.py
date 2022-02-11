@@ -49,6 +49,7 @@ from .vit_seq_clean_zero_down import vit_seq_clean_zero_down
 from .vit_seq_clean_all_zero import vit_seq_clean_all_zero
 from .vit_clean_base import vit_clean_base
 from .vit_fc_clean import vit_fc_clean
+from .vit_rand_clean_no_pos import vit_rand_clean_no_pos
 
 
 
