@@ -15,6 +15,8 @@ from .vit_vt_hg_res import Vit_vt_hourglass_res
 from .vit_vt_hg_res_v2 import Vit_vt_hourglass_res_v2
 from .vit_pos import Vit_pos
 from .vit_pos_depthwise import Vit_pos_depth
+from .vit_conv_4down import Vit_conv_4down
+from .vit_rand_4down import Vit_rand_4down
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
