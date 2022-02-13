@@ -9,25 +9,37 @@ from torch import Tensor
 
 from .vit import VisionTransformer
 from ..builder import BACKBONES
+from mmcv.cnn import ConvModule
 
 @BACKBONES.register_module()
-class Vit_rand_4down(VisionTransformer):
+class Vit_conv_4down_v2(VisionTransformer):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
 
     def __init__(self,
                  shrink_index=4,
                  expand_index=7,
-                 num_queries=256,
+                 down_conv_style="3x3",
                  **kwargs):
-        super(Vit_rand_4down, self).__init__(**kwargs)
+        super(Vit_conv_4down_v2, self).__init__(**kwargs)
         self.shrink_index = shrink_index
         self.expand_index = expand_index
-        self.num_queries = num_queries
+
+        embed_dim = kwargs['embed_dim']
+        if down_conv_style == "3x3":
+            self.down = ConvModule(
+            in_channels=embed_dim,
+            out_channels=embed_dim,
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            norm_cfg=self.norm_cfg
+        )
 
     def forward(self, x):
         B = x.shape[0]
         x = self.patch_embed(x)
+
         x = x.flatten(2).transpose(1, 2)
 
         # stole cls_tokens impl from Phil Wang, thanks
@@ -40,12 +52,14 @@ class Vit_rand_4down(VisionTransformer):
         for i, blk in enumerate(self.blocks):
             if i == self.shrink_index:
                 x = x[:, 1:]
-                idx = torch.randint(0, 1024, (self.num_queries,))
-                x = x[:, idx]
+                n, hw, c = x.shape
+                h = w = int(math.sqrt(hw))
+                x = x.transpose(1, 2).reshape(n, c, h, w)
+                x = self.down(x)
+                x = x.reshape(n, c, hw // 4).transpose(2, 1)
             x = blk(x)
             if i in self.out_indices:
                 outs.append(x)
             if i == self.expand_index:
                 break
-        outs.append(idx)
         return tuple(outs)
