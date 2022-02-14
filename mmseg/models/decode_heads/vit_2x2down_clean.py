@@ -38,7 +38,7 @@ class PositionalEncoding(nn.Module):
 
 
 @HEADS.register_module()
-class convdown_clean(VisionTransformerUpHead):
+class x2down_clean(VisionTransformerUpHead):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
 
@@ -50,7 +50,7 @@ class convdown_clean(VisionTransformerUpHead):
                  num_expand_layer=3,
                  num_heads=12,
                  **kwargs):
-        super(convdown_clean, self).__init__(**kwargs)
+        super(x2down_clean, self).__init__(**kwargs)
 
         self.pos_style = zipee_pos_style
         self.num_queries = ziper_query
@@ -67,14 +67,14 @@ class convdown_clean(VisionTransformerUpHead):
         else:
             self.input_proj = nn.Sequential()
 
-        self.down = ConvModule(
-            in_channels=dim,
-            out_channels=dim,
-            kernel_size=3,
-            stride=2,
-            padding=1,
-            norm_cfg=self.norm_cfg
-        )
+        # self.down = ConvModule(
+        #     in_channels=dim,
+        #     out_channels=dim,
+        #     kernel_size=3,
+        #     stride=2,
+        #     padding=1,
+        #     norm_cfg=self.norm_cfg
+        # )
 
     def forward(self, x):
         x = self._transform_inputs(x)
@@ -89,7 +89,8 @@ class convdown_clean(VisionTransformerUpHead):
             h = w = int(math.sqrt(hw))
             x = x.transpose(1, 2).reshape(n, c, h, w)
         # down
-        x = self.down(x)
+        down_x = x[:, :, ::2, ::2]
+        x = down_x
         x = x.reshape(n, c, hw // 4).transpose(2, 1)
         # up
         down_x = x

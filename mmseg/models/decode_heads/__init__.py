@@ -54,6 +54,8 @@ from .up_from_rand import up_from_rand
 from .vit_cond_rand_clean import vit_cond_rand_clean
 from .vit_convdown_clean import convdown_clean
 from .up_from_conv import up_from_conv
+from .old_2x2down_1024up import old_2x2down_1024up
+from .vit_2x2down_clean import x2down_clean
 
 
 
