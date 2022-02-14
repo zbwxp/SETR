@@ -70,9 +70,9 @@ class up_from_rand(VisionTransformerUpHead):
         x = self._transform_inputs(x)
         x = self.input_proj(x)
         bs = x.size()[0]
-        if x.dim() == 3:
-            if x.shape[1] % 32 != 0:
-                x = x[:, 1:]
+        # if x.dim() == 3:
+        #     if x.shape[1] % 32 != 0:
+        #         x = x[:, 1:]
         # pick rand token
         if self.use_idx:
             if len(idx.size()) == 1:

@@ -31,7 +31,6 @@ class Vit_rand_progress_4down(VisionTransformer):
             self._iter += 1
             additonal_samples = int((max((80000-self._iter), 0)/80000)**2 * (1024-self.num_queries))
             num_samples = self.num_queries + additonal_samples
-            print(num_samples)
         else:
             num_samples = self.num_queries
 
