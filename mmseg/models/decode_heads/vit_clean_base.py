@@ -46,9 +46,10 @@ class vit_clean_base(VisionTransformerUpHead):
                  num_ziper_layer=3,
                  num_expand_layer=3,
                  num_heads=12,
+                 use_pos=True,
                  **kwargs):
         super(vit_clean_base, self).__init__(**kwargs)
-
+        self.use_pos = use_pos
         self.pos_style = zipee_pos_style
         self.num_queries = ziper_query
         dim = kwargs['embed_dim']
@@ -71,8 +72,8 @@ class vit_clean_base(VisionTransformerUpHead):
         if x.dim() == 3:
             if x.shape[1] % 32 != 0:
                 x = x[:, 1:]
-        # down
-        x += self.zip_pos_embed.pos_table.clone().detach()
+        if self.use_pos:
+            x += self.zip_pos_embed.pos_table.clone().detach()
 
         up_x = self.up_decoder(
             self.expand_query_embed.weight.repeat(bs, 1, 1).transpose(0, 1),
