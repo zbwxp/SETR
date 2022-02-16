@@ -56,6 +56,7 @@ from .vit_convdown_clean import convdown_clean
 from .up_from_conv import up_from_conv
 from .old_2x2down_1024up import old_2x2down_1024up
 from .vit_2x2down_clean import x2down_clean
+from .up_from_2x2 import up_from_2x2
 
 
 
