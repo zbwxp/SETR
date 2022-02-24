@@ -23,6 +23,7 @@ from .vit_cond_weighted_rand_4down import Vit_cond_weighted_rand_4down
 from .vit_rand_progress_4down import Vit_rand_progress_4down
 from .vit_2x2_7down import vit_2x2_down
 from .vit_256down import vit_256down
+from .vit_2x2_res_down import vit_2x2_res_down
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
