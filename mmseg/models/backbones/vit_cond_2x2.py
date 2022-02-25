@@ -1,28 +1,30 @@
 # from .layers import DropPath, to_2tuple, trunc_normal_
+import copy
+import math
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 
 from .vit import VisionTransformer
 from ..builder import BACKBONES
 
-
 @BACKBONES.register_module()
-class Vit_cond_weighted_rand_4down(VisionTransformer):
+class vit_cond_2x2(VisionTransformer):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
 
     def __init__(self,
-                 shrink_index=4,
-                 expand_index=7,
-                 down_conv_style="3x3",
+                 shrink_index=7,
+                 expand_index=100,
+                 num_queries=256,
                  use_softmax=False,
                  **kwargs):
-        super(Vit_cond_weighted_rand_4down, self).__init__(**kwargs)
+        super(vit_cond_2x2, self).__init__(**kwargs)
         self.shrink_index = shrink_index
         self.expand_index = expand_index
-
+        self.num_queries = num_queries
         reduction = 16
         expand_query = 1024
         self.num_queries = 256
@@ -42,6 +44,7 @@ class Vit_cond_weighted_rand_4down(VisionTransformer):
                 nn.Sigmoid()
             )
 
+
     def forward(self, x):
         B = x.shape[0]
         x = self.patch_embed(x)
@@ -57,19 +60,26 @@ class Vit_cond_weighted_rand_4down(VisionTransformer):
         for i, blk in enumerate(self.blocks):
             if i == self.shrink_index:
                 x = x[:, 1:]
+                n, hw, c = x.shape
+                h = w = int(math.sqrt(hw))
                 token = x.mean(-1)
                 se = self.se(token)
+                se = se.reshape(n, h, w)
+                se = se[:, ::2, ::2]
+                se = se.reshape(n, hw // 4)
                 if self.use_softmax:
-                    se = 100 * se
-                # multiply with idx weight so that it can learn
+                    se = se * 100
+
+                x = x.transpose(1, 2).reshape(n, c, h, w)
+                down_x = x[:, :, ::2, ::2]
+                x = down_x
+                x = x.reshape(n, c, hw // 4).transpose(2, 1)
+
                 x *= se[:, :, None]
-                learned_idx = torch.topk(se, self.num_queries)[1]
-                x = torch.stack([x_[id_] for x_, id_ in zip(x, learned_idx)])
 
             x = blk(x)
             if i in self.out_indices:
                 outs.append(x)
             if i == self.expand_index:
                 break
-        outs.append(learned_idx)
         return tuple(outs)

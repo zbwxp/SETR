@@ -24,6 +24,7 @@ from .vit_rand_progress_4down import Vit_rand_progress_4down
 from .vit_2x2_7down import vit_2x2_down
 from .vit_256down import vit_256down
 from .vit_2x2_res_down import vit_2x2_res_down
+from .vit_cond_2x2 import vit_cond_2x2
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
