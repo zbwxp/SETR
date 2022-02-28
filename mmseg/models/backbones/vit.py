@@ -1,16 +1,18 @@
+import math
+import os
+import warnings
+from functools import partial
+from itertools import repeat
+
 import torch
 import torch.nn as nn
-from functools import partial
-import math
-from itertools import repeat
 from torch._six import container_abcs
-import warnings
 
 from .helpers import load_pretrained
-# from .layers import DropPath, to_2tuple, trunc_normal_
-
 from ..builder import BACKBONES
-import os
+
+
+# from .layers import DropPath, to_2tuple, trunc_normal_
 
 def _cfg(url='', **kwargs):
     path = os.getcwd()
@@ -82,7 +84,7 @@ class DropPath(nn.Module):
         # work with diff dim tensors, not just 2D ConvNets
         shape = (x.shape[0],) + (1,) * (x.ndim - 1)
         random_tensor = keep_prob + \
-            torch.rand(shape, dtype=x.dtype, device=x.device)
+                        torch.rand(shape, dtype=x.dtype, device=x.device)
         random_tensor.floor_()  # binarize
         output = x.div(keep_prob) * random_tensor
         return output
@@ -177,10 +179,20 @@ class Attention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-    def forward(self, x):
+    def forward(self, x, shrink=False):
         B, N, C = x.shape
         q, k, v = self.qkv(x).reshape(B, N, 3, self.num_heads,
                                       C // self.num_heads).permute(2, 0, 3, 1, 4)
+        if shrink == "2x2":
+            n, head, hw, c = q.size()
+            if hw % 32 != 0:
+                q = q[:, :, 1:, :]
+            h = w = int(math.sqrt(hw))
+            q = q.transpose(-1, -2).reshape(n, head, c, h, w)
+            down_q = q[:, :, :, ::2, ::2]
+            q = down_q
+            q = q.reshape(n, head, c, hw // 4).transpose(-1, -2)
+            N = hw // 4
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
@@ -208,8 +220,20 @@ class Block(nn.Module):
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim,
                        act_layer=act_layer, drop=drop)
 
-    def forward(self, x):
-        x = x + self.drop_path(self.attn(self.norm1(x)))
+    def forward(self, x, shrink=False):
+        if shrink == "2x2":
+            non_uniform_x = self.drop_path(self.attn(self.norm1(x), shrink))
+            n, hw, c = x.shape
+            if hw % 32 != 0:
+                x = x[:, 1:]
+            h = w = int(math.sqrt(hw))
+            x = x.transpose(1, 2).reshape(n, c, h, w)
+            down_x = x[:, :, ::2, ::2]
+            x = down_x
+            x = x.reshape(n, c, hw // 4).transpose(2, 1)
+            x = x + non_uniform_x
+        else:
+            x = x + self.drop_path(self.attn(self.norm1(x), shrink))
         x = x + self.drop_path(self.mlp(self.norm2(x)))
         return x
 
@@ -223,7 +247,7 @@ class PatchEmbed(nn.Module):
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
         num_patches = (img_size[1] // patch_size[1]) * \
-            (img_size[0] // patch_size[0])
+                      (img_size[0] // patch_size[0])
         self.img_size = img_size
         self.patch_size = patch_size
         self.num_patches = num_patches
@@ -284,8 +308,10 @@ class VisionTransformer(nn.Module):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
 
-    def __init__(self, model_name='vit_large_patch16_384', img_size=384, patch_size=16, in_chans=3, embed_dim=1024, depth=24,
-                 num_heads=16, num_classes=19, mlp_ratio=4., qkv_bias=True, qk_scale=None, drop_rate=0.1, attn_drop_rate=0.,
+    def __init__(self, model_name='vit_large_patch16_384', img_size=384, patch_size=16, in_chans=3, embed_dim=1024,
+                 depth=24,
+                 num_heads=16, num_classes=19, mlp_ratio=4., qkv_bias=True, qk_scale=None, drop_rate=0.1,
+                 attn_drop_rate=0.,
                  drop_path_rate=0., hybrid_backbone=None, norm_layer=partial(nn.LayerNorm, eps=1e-6), norm_cfg=None,
                  pos_embed_interp=False, random_init=False, align_corners=False, **kwargs):
         super(VisionTransformer, self).__init__(**kwargs)
@@ -330,7 +356,8 @@ class VisionTransformer(nn.Module):
                                                 self.depth)]  # stochastic depth decay rule
         self.blocks = nn.ModuleList([
             Block(
-                dim=self.embed_dim, num_heads=self.num_heads, mlp_ratio=self.mlp_ratio, qkv_bias=self.qkv_bias, qk_scale=self.qk_scale,
+                dim=self.embed_dim, num_heads=self.num_heads, mlp_ratio=self.mlp_ratio, qkv_bias=self.qkv_bias,
+                qk_scale=self.qk_scale,
                 drop=self.drop_rate, attn_drop=self.attn_drop_rate, drop_path=dpr[i], norm_layer=self.norm_layer)
             for i in range(self.depth)])
 
@@ -359,10 +386,13 @@ class VisionTransformer(nn.Module):
             self.default_cfg = default_cfgs[self.model_name]
 
             if self.model_name in ['vit_small_patch16_224', 'vit_base_patch16_224']:
-                load_pretrained(self, num_classes=self.num_classes, in_chans=self.in_chans, pos_embed_interp=self.pos_embed_interp,
-                                num_patches=self.patch_embed.num_patches, align_corners=self.align_corners, filter_fn=self._conv_filter)
+                load_pretrained(self, num_classes=self.num_classes, in_chans=self.in_chans,
+                                pos_embed_interp=self.pos_embed_interp,
+                                num_patches=self.patch_embed.num_patches, align_corners=self.align_corners,
+                                filter_fn=self._conv_filter)
             else:
-                load_pretrained(self, num_classes=self.num_classes, in_chans=self.in_chans, pos_embed_interp=self.pos_embed_interp,
+                load_pretrained(self, num_classes=self.num_classes, in_chans=self.in_chans,
+                                pos_embed_interp=self.pos_embed_interp,
                                 num_patches=self.patch_embed.num_patches, align_corners=self.align_corners)
         else:
             print('Initialize weight randomly')
