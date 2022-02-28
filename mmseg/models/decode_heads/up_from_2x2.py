@@ -47,6 +47,7 @@ class up_from_2x2(VisionTransformerUpHead):
                  use_rand_idx=True,
                  num_expand_layer=3,
                  num_heads=12,
+                 use_norm=False,
                  **kwargs):
         super(up_from_2x2, self).__init__(**kwargs)
 
@@ -64,10 +65,15 @@ class up_from_2x2(VisionTransformerUpHead):
         else:
             self.input_proj = nn.Sequential()
 
+        self.use_norm = use_norm
+        if self.use_norm:
+            self.proj_norm = nn.LayerNorm(dim)
 
     def forward(self, x):
         x = self._transform_inputs(x)
         x = self.input_proj(x)
+        if self.use_norm:
+            x = self.proj_norm(x)
         bs = x.size()[0]
 
         if self.use_idx:
