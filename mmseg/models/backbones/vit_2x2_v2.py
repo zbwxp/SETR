@@ -19,11 +19,15 @@ class vit_2x2_v2(VisionTransformer):
                  shrink_index=7,
                  expand_index=100,
                  num_queries=256,
+                 use_norm=False,
                  **kwargs):
         super(vit_2x2_v2, self).__init__(**kwargs)
         self.shrink_index = shrink_index
         self.expand_index = expand_index
         self.num_queries = num_queries
+        self.use_norm = use_norm
+        if self.use_norm:
+            self.shrink_norm = nn.LayerNorm(kwargs['embed_dim'])
 
     def forward(self, x):
         B = x.shape[0]
@@ -40,6 +44,8 @@ class vit_2x2_v2(VisionTransformer):
         for i, blk in enumerate(self.blocks):
             if i == self.shrink_index:
                 x = blk(x, shrink="2x2")
+                if self.use_norm:
+                    x = self.shrink_norm(x)
             else:
                 x = blk(x)
             if i in self.out_indices:
