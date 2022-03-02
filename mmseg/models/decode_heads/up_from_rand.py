@@ -47,6 +47,7 @@ class up_from_rand(VisionTransformerUpHead):
                  use_rand_idx=True,
                  num_expand_layer=3,
                  num_heads=12,
+                 use_norm=False,
                  **kwargs):
         super(up_from_rand, self).__init__(**kwargs)
 
@@ -64,15 +65,20 @@ class up_from_rand(VisionTransformerUpHead):
         else:
             self.input_proj = nn.Sequential()
 
+        self.use_norm = use_norm
+        if self.use_norm:
+            self.proj_norm = nn.LayerNorm(dim)
+
 
     def forward(self, x):
         idx = x[-1]
         x = self._transform_inputs(x)
         x = self.input_proj(x)
         bs = x.size()[0]
-        # if x.dim() == 3:
-        #     if x.shape[1] % 32 != 0:
-        #         x = x[:, 1:]
+
+        if self.use_norm:
+            x = self.proj_norm(x)
+
         # pick rand token
         if self.use_idx:
             if len(idx.size()) == 1:

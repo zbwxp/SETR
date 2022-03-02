@@ -193,6 +193,12 @@ class Attention(nn.Module):
             q = down_q
             q = q.reshape(n, head, c, hw // 4).transpose(-1, -2)
             N = hw // 4
+        elif torch.is_tensor(shrink):
+            n, head, hw, c = q.size()
+            if hw % 32 != 0:
+                q = q[:, :, 1:, :]
+            q = torch.stack([x_[:, id_] for x_, id_ in zip(q, shrink)])
+            N = hw // 4
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
@@ -229,9 +235,15 @@ class Block(nn.Module):
             h = w = int(math.sqrt(hw))
             x = x.transpose(1, 2).reshape(n, c, h, w)
             down_x = x[:, :, ::2, ::2]
-            x = down_x
-            x = x.reshape(n, c, hw // 4).transpose(2, 1)
-            x = x + non_uniform_x
+            down_x = down_x.reshape(n, c, hw // 4).transpose(2, 1)
+            x = down_x + non_uniform_x
+        elif torch.is_tensor(shrink):
+            non_uniform_x = self.drop_path(self.attn(self.norm1(x), shrink))
+            n, hw, c = x.shape
+            if hw % 32 != 0:
+                x = x[:, 1:]
+            down_x = torch.stack([x_[id_] for x_, id_ in zip(x, shrink)])
+            x = down_x + non_uniform_x
         else:
             x = x + self.drop_path(self.attn(self.norm1(x), shrink))
         x = x + self.drop_path(self.mlp(self.norm2(x)))
