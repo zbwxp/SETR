@@ -48,6 +48,7 @@ class up_from_2x2(VisionTransformerUpHead):
                  num_expand_layer=3,
                  num_heads=12,
                  use_norm=False,
+                 shrink="2x2",
                  **kwargs):
         super(up_from_2x2, self).__init__(**kwargs)
 
@@ -56,7 +57,7 @@ class up_from_2x2(VisionTransformerUpHead):
         decoder_layer = nn.TransformerDecoderLayer(d_model=dim, nhead=num_heads, dim_feedforward=dim * 4)
         self.up_decoder = nn.TransformerDecoder(decoder_layer, num_expand_layer)
         self.expand_query_embed = nn.Embedding(expand_query, dim)
-
+        self.shrink = shrink
         self.zip_pos_embed = PositionalEncoding(kwargs['embed_dim'], 1024)
 
         if self.in_channels != dim:
@@ -81,8 +82,12 @@ class up_from_2x2(VisionTransformerUpHead):
             n, hw, c = pos.shape
             h = w = int(math.sqrt(hw))
             pos = pos.transpose(1, 2).reshape(n, c, h, w)
-            down_pos = pos[:, :, ::2, ::2]
-            pos = down_pos.reshape(n, c, hw // 4).transpose(2, 1)
+            if self.shrink == "2x2":
+                down_pos = pos[:, :, ::2, ::2]
+                pos = down_pos.reshape(n, c, hw // 4).transpose(2, 1)
+            elif self.shrink == "4x4":
+                down_pos = pos[:, :, ::4, ::4]
+                pos = down_pos.reshape(n, c, hw // 16).transpose(2, 1)
             x += pos
 
         up_x = self.up_decoder(

@@ -27,6 +27,7 @@ from .vit_2x2_res_down import vit_2x2_res_down
 from .vit_cond_2x2 import vit_cond_2x2
 from .vit_2x2_v2 import vit_2x2_v2
 from .vit_cond_weighted_v2 import Vit_cond_weighted_v2
+from .vit_4x4_2step import vit_4x4_2step
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
