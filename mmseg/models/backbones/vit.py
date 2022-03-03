@@ -193,6 +193,18 @@ class Attention(nn.Module):
             q = down_q
             q = q.reshape(n, head, c, hw // 4).transpose(-1, -2)
             N = hw // 4
+        elif shrink == "4x4":
+            n, head, hw, c = q.size()
+            if hw % 32 != 0:
+                q = q[:, :, 1:, :]
+            h = w = int(math.sqrt(hw))
+            q = q.transpose(-1, -2).reshape(n, head, c, h, w)
+            down_q = q[:, :, :, ::4, ::4]
+            q = down_q
+            q = q.reshape(n, head, c, hw // 16).transpose(-1, -2)
+            N = hw // 16
+
+
         elif torch.is_tensor(shrink):
             n, head, hw, c = q.size()
             if hw % 32 != 0:
@@ -236,6 +248,16 @@ class Block(nn.Module):
             x = x.transpose(1, 2).reshape(n, c, h, w)
             down_x = x[:, :, ::2, ::2]
             down_x = down_x.reshape(n, c, hw // 4).transpose(2, 1)
+            x = down_x + non_uniform_x
+        elif shrink == "4x4":
+            non_uniform_x = self.drop_path(self.attn(self.norm1(x), shrink))
+            n, hw, c = x.shape
+            if hw % 32 != 0:
+                x = x[:, 1:]
+            h = w = int(math.sqrt(hw))
+            x = x.transpose(1, 2).reshape(n, c, h, w)
+            down_x = x[:, :, ::4, ::4]
+            down_x = down_x.reshape(n, c, hw // 16).transpose(2, 1)
             x = down_x + non_uniform_x
         elif torch.is_tensor(shrink):
             non_uniform_x = self.drop_path(self.attn(self.norm1(x), shrink))
