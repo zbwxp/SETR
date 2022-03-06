@@ -16,14 +16,16 @@ class vit_4x4_2step(VisionTransformer):
     """
 
     def __init__(self,
-                 shrink_index=7,
+                 shrink_index_1=4,
+                 shrink_index_2=7,
                  expand_index=100,
                  num_queries=256,
                  use_norm=False,
                  shrink="2x2",
                  **kwargs):
         super(vit_4x4_2step, self).__init__(**kwargs)
-        self.shrink_index = shrink_index
+        self.shrink_index_1 = shrink_index_1
+        self.shrink_index_2 = shrink_index_2
         self.expand_index = expand_index
         self.num_queries = num_queries
         self.use_norm = use_norm
@@ -44,9 +46,9 @@ class vit_4x4_2step(VisionTransformer):
 
         outs = []
         for i, blk in enumerate(self.blocks):
-            if i == self.shrink_index:
+            if i == self.shrink_index_1:
                 x = blk(x, shrink=self.shrink)
-            elif i == self.shrink_index + 2:
+            elif i == self.shrink_index_2:
                 x = blk(x, shrink=self.shrink)
             else:
                 x = blk(x)
