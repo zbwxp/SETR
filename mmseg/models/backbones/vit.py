@@ -203,7 +203,12 @@ class Attention(nn.Module):
             q = down_q
             q = q.reshape(n, head, c, hw // 16).transpose(-1, -2)
             N = hw // 16
-
+        elif shrink == "::2":
+            n, head, hw, c = q.size()
+            if hw % 32 != 0:
+                q = q[:, :, 1:, :]
+            q = q[:, :, ::2, :]
+            N = hw // 2
 
         elif torch.is_tensor(shrink):
             n, head, hw, c = q.size()
@@ -265,6 +270,13 @@ class Block(nn.Module):
             if hw % 32 != 0:
                 x = x[:, 1:]
             down_x = torch.stack([x_[id_] for x_, id_ in zip(x, shrink)])
+            x = down_x + non_uniform_x
+        elif shrink == "::2":
+            non_uniform_x = self.drop_path(self.attn(self.norm1(x), shrink))
+            n, hw, c = x.shape
+            if hw % 32 != 0:
+                x = x[:, 1:]
+            down_x = x[:, ::2, :]
             x = down_x + non_uniform_x
         else:
             x = x + self.drop_path(self.attn(self.norm1(x), shrink))
