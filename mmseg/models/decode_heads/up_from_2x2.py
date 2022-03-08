@@ -60,11 +60,13 @@ class up_from_2x2(VisionTransformerUpHead):
         self.shrink = shrink
         self.zip_pos_embed = PositionalEncoding(kwargs['embed_dim'], 1024)
 
-        if self.in_channels != dim:
-            self.input_proj = nn.Linear(self.in_channels, dim)
-            trunc_normal_(self.input_proj.weight, std=.02)
-        else:
-            self.input_proj = nn.Sequential()
+        self.input_proj = nn.Linear(self.in_channels, dim)
+
+        # if self.in_channels != dim:
+        #     self.input_proj = nn.Linear(self.in_channels, dim)
+        #     trunc_normal_(self.input_proj.weight, std=.02)
+        # else:
+        #     self.input_proj = nn.Sequential()
 
         self.use_norm = use_norm
         if self.use_norm:
