@@ -21,10 +21,11 @@ model = dict(
         num_classes=150),
     decode_head=dict(
         type='up_from_2x2',
-        num_ziper_layer=1,
+        num_expand_layer=1,
         in_channels=in_channels,
         embed_dim=in_channels // 2,
         use_norm=True,
+        use_rand_idx=False,
         in_index=11,
         img_size=img_size,
         align_corners=False,
@@ -50,7 +51,6 @@ model = dict(
             type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
         dict(
             type='up_from_2x2',
-            num_ziper_layer=1,
             expand_query=256,
             in_channels=in_channels,
             embed_dim=in_channels // 4,
@@ -69,7 +69,6 @@ model = dict(
         dict(
             type='up_from_2x2',
             expand_query=256,
-            num_ziper_layer=1,
             in_channels=in_channels,
             embed_dim=in_channels // 4,
             channels=512,
