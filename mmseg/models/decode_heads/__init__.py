@@ -58,6 +58,8 @@ from .old_2x2down_1024up import old_2x2down_1024up
 from .vit_2x2down_clean import x2down_clean
 from .up_from_2x2 import up_from_2x2
 from .TPN import TPN
+from .TPN_reverse import TPN_reverse
+from .TPN_3x import TPN_3x
 
 
 
