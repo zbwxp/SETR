@@ -60,6 +60,7 @@ from .up_from_2x2 import up_from_2x2
 from .TPN import TPN
 from .TPN_reverse import TPN_reverse
 from .TPN_3x import TPN_3x
+from .TPN_para import TPN_para
 
 
 
