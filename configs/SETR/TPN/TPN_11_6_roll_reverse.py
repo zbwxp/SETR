@@ -22,6 +22,7 @@ model = dict(
         type='TPN_roll',
         in_channels=in_channels,
         embed_dim=in_channels // 2,
+        reverse=True,
         num_expand_layer=3,
         use_norm=True,
         in_index=11,

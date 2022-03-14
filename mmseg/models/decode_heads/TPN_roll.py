@@ -42,17 +42,21 @@ class TPN_roll(VisionTransformerUpHead):
     def __init__(self,
                  expand_query=1024,
                  num_expand_layer=1,
+                 reverse=False,
+                 multi_decoder=False,
                  shrink_query=256,
                  num_ziper_layer=1,
                  num_heads=12,
                  use_norm=False,
                  **kwargs):
         super(TPN_roll, self).__init__(**kwargs)
-
+        self.reverse = reverse
+        self.multi_decoder = multi_decoder
         dim = kwargs['embed_dim']
         decoder_layer = nn.TransformerDecoderLayer(d_model=dim, nhead=num_heads, dim_feedforward=dim * 4)
         self.up_decoder = nn.TransformerDecoder(decoder_layer, num_expand_layer)
-
+        if multi_decoder:
+            self.up_decoder_1 = nn.TransformerDecoder(decoder_layer, num_expand_layer)
         self.expand_query_embed = nn.Embedding(expand_query, dim)
 
         self.input_proj_1 = nn.Linear(self.in_channels, dim)
@@ -76,14 +80,32 @@ class TPN_roll(VisionTransformerUpHead):
             x2 = self.proj_norm_2(x2)
         bs = x1.size()[0]
 
-        x1 = self.up_decoder(
-            self.expand_query_embed.weight.repeat(bs, 1, 1).transpose(0, 1),
-            x1.transpose(0, 1))
-
-        x2 = self.up_decoder(x1, x2.transpose(0, 1))
-
-        x = x2.transpose(0, 1)
-
+        if not self.multi_decoder:
+            if self.reverse:
+                x2 = self.up_decoder(
+                    self.expand_query_embed.weight.repeat(bs, 1, 1).transpose(0, 1),
+                    x2.transpose(0, 1))
+                x1 = self.up_decoder(x2, x1.transpose(0, 1))
+                x = x1.transpose(0, 1)
+            else:
+                x1 = self.up_decoder(
+                    self.expand_query_embed.weight.repeat(bs, 1, 1).transpose(0, 1),
+                    x1.transpose(0, 1))
+                x2 = self.up_decoder(x1, x2.transpose(0, 1))
+                x = x2.transpose(0, 1)
+        else:
+            if self.reverse:
+                x2 = self.up_decoder(
+                    self.expand_query_embed.weight.repeat(bs, 1, 1).transpose(0, 1),
+                    x2.transpose(0, 1))
+                x1 = self.up_decoder_1(x2, x1.transpose(0, 1))
+                x = x1.transpose(0, 1)
+            else:
+                x1 = self.up_decoder(
+                    self.expand_query_embed.weight.repeat(bs, 1, 1).transpose(0, 1),
+                    x1.transpose(0, 1))
+                x2 = self.up_decoder_1(x1, x2.transpose(0, 1))
+                x = x2.transpose(0, 1)
         if self.upsampling_method == 'bilinear':
             if x.dim() == 3:
                 n, hw, c = x.shape

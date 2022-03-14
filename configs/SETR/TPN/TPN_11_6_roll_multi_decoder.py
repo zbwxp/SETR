@@ -23,6 +23,7 @@ model = dict(
         in_channels=in_channels,
         embed_dim=in_channels // 2,
         num_expand_layer=3,
+        multi_decoder=True,
         use_norm=True,
         in_index=11,
         img_size=img_size,
