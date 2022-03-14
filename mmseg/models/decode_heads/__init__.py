@@ -62,6 +62,7 @@ from .TPN_reverse import TPN_reverse
 from .TPN_3x import TPN_3x
 from .TPN_para import TPN_para
 from .TPN_roll import TPN_roll
+from .TPN_merge import TPN_merge
 
 
 

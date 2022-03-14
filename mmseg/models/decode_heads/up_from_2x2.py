@@ -73,6 +73,20 @@ class up_from_2x2(VisionTransformerUpHead):
         if self.use_norm:
             self.proj_norm = nn.LayerNorm(dim)
 
+        if self.upsampling_method == '2x2_distributed':
+            del self.conv_0
+            self.conv_0 = nn.Conv2d(dim // 4, 256, 1, 1)
+
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                trunc_normal_(m.weight, std=.02)
+                if isinstance(m, nn.Linear) and m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.LayerNorm):
+                nn.init.constant_(m.bias, 0)
+                nn.init.constant_(m.weight, 1.0)
+
     def forward(self, x):
         x = self._transform_inputs(x)
         x = self.input_proj(x)
@@ -105,50 +119,25 @@ class up_from_2x2(VisionTransformerUpHead):
                 h = w = int(math.sqrt(hw))
                 x = x.transpose(1, 2).reshape(n, c, h, w)
 
+            x = self.conv_0(x)
+            x = self.syncbn_fc_0(x)
+            x = F.relu(x, inplace=True)
+            x = self.conv_1(x)
+            x = F.interpolate(
+                x, size=self.img_size, mode='bilinear', align_corners=self.align_corners)
+
+        elif self.upsampling_method == '2x2_distributed':
             if x.dim() == 3:
                 n, hw, c = x.shape
                 h = w = int(math.sqrt(hw))
                 x = x.transpose(1, 2).reshape(n, c, h, w)
+                x = x.reshape(n, 2, 2, c // 4, h, w).permute(0,3,1,4,2,5).reshape(n, c // 4, 2*h, 2*w)
 
-            if self.num_conv == 2:
-                if self.num_upsampe_layer == 2:
-                    x = self.conv_0(x)
-                    x = self.syncbn_fc_0(x)
-                    x = F.relu(x, inplace=True)
-                    x = F.interpolate(
-                        x, size=x.shape[-1]*4, mode='bilinear', align_corners=self.align_corners)
-                    x = self.conv_1(x)
-                    x = F.interpolate(
-                        x, size=self.img_size, mode='bilinear', align_corners=self.align_corners)
-                elif self.num_upsampe_layer == 1:
-                    x = self.conv_0(x)
-                    x = self.syncbn_fc_0(x)
-                    x = F.relu(x, inplace=True)
-                    x = self.conv_1(x)
-                    x = F.interpolate(
-                        x, size=self.img_size, mode='bilinear', align_corners=self.align_corners)
-            elif self.num_conv == 4:
-                if self.num_upsampe_layer == 4:
-                    x = self.conv_0(x)
-                    x = self.syncbn_fc_0(x)
-                    x = F.relu(x, inplace=True)
-                    x = F.interpolate(
-                        x, size=x.shape[-1]*2, mode='bilinear', align_corners=self.align_corners)
-                    x = self.conv_1(x)
-                    x = self.syncbn_fc_1(x)
-                    x = F.relu(x, inplace=True)
-                    x = F.interpolate(
-                        x, size=x.shape[-1]*2, mode='bilinear', align_corners=self.align_corners)
-                    x = self.conv_2(x)
-                    x = self.syncbn_fc_2(x)
-                    x = F.relu(x, inplace=True)
-                    x = F.interpolate(
-                        x, size=x.shape[-1]*2, mode='bilinear', align_corners=self.align_corners)
-                    x = self.conv_3(x)
-                    x = self.syncbn_fc_3(x)
-                    x = F.relu(x, inplace=True)
-                    x = self.conv_4(x)
-                    x = F.interpolate(
-                        x, size=x.shape[-1]*2, mode='bilinear', align_corners=self.align_corners)
+            x = self.conv_0(x)
+            x = self.syncbn_fc_0(x)
+            x = F.relu(x, inplace=True)
+            x = self.conv_1(x)
+            x = F.interpolate(
+                x, size=self.img_size, mode='bilinear', align_corners=self.align_corners)
 
         return x
