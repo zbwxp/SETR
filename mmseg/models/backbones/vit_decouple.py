@@ -55,6 +55,7 @@ class vit_decouple(VisionTransformer):
             if i == self.shrink_index:
                 bs = x.size()[0]
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
+                attn = attn.sigmoid()
                 x = x.transpose(0, 1)
             else:
                 x = blk(x)
