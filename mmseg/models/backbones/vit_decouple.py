@@ -68,10 +68,10 @@ class vit_decouple(VisionTransformer):
                     self.q.weight = nn.Parameter(init_param[0])
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
                 # attn = attn.sigmoid()
-                attn = attn.softmax(dim=1)
                 cos = nn.CosineSimilarity(dim=2)
                 sim = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
                 loss_sim = torch.stack(sim, dim=1).mean()
+                attn = attn.softmax(dim=1)
                 x = x.transpose(0, 1)
                 # f, axarr = plt.subplots(3, 3)
                 # axarr[0, 0].imshow(attn[0,0][1:].reshape(32,32).cpu())
