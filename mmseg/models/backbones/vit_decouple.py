@@ -10,6 +10,7 @@ from .decoder_attn import *
 
 from .vit import VisionTransformer
 from ..builder import BACKBONES
+import matplotlib.pyplot as plt
 
 @BACKBONES.register_module()
 class vit_decouple(VisionTransformer):
@@ -36,6 +37,7 @@ class vit_decouple(VisionTransformer):
         decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=num_heads, dim_feedforward=dim * 4)
         self.decoder = TPN_Decoder(decoder_layer, num_expand_layer)
         self.q = nn.Embedding(num_queries, dim)
+        self.init = 0
 
 
     def forward(self, x):
@@ -53,10 +55,28 @@ class vit_decouple(VisionTransformer):
         attn = None
         for i, blk in enumerate(self.blocks):
             if i == self.shrink_index:
-                bs = x.size()[0]
+                bs, num_token, ch = x.size()
+                if self.init == 0:
+                    self.init = 1
+                    idx = torch.randint(1, num_token, (self.q.num_embeddings,))
+                    init_param = x[:, idx]
+                    self.q.weight = nn.Parameter(init_param[0])
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
-                attn = attn.sigmoid()
+                # attn = attn.sigmoid()
+                attn = attn.softmax(dim=1)
                 x = x.transpose(0, 1)
+                # f, axarr = plt.subplots(3, 3)
+                # axarr[0, 0].imshow(attn[0,0][1:].reshape(32,32).cpu())
+                # axarr[0, 1].imshow(attn[0,1][1:].reshape(32,32).cpu())
+                # axarr[0, 2].imshow(attn[0,2][1:].reshape(32,32).cpu())
+                # axarr[1, 0].imshow(attn[0,4][1:].reshape(32,32).cpu())
+                # axarr[1, 1].imshow(attn[0,5][1:].reshape(32,32).cpu())
+                # axarr[1, 2].imshow(attn[0,6][1:].reshape(32,32).cpu())
+                # axarr[2, 0].imshow(attn[0,3][1:].reshape(32,32).cpu())
+                # axarr[2, 1].imshow(attn[0,7][1:].reshape(32,32).cpu())
+                # axarr[2, 2].imshow(attn[0,8][1:].reshape(32,32).cpu())
+                # print()
+
             else:
                 x = blk(x)
             if i in self.out_indices:
