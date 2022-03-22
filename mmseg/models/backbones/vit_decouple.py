@@ -21,7 +21,7 @@ class vit_decouple(VisionTransformer):
                  shrink_index=4,
                  expand_index=100,
                  num_queries=256,
-                 use_norm=False,
+                 use_norm=True,
                  **kwargs):
         super(vit_decouple, self).__init__(**kwargs)
         self.shrink_index = shrink_index
@@ -32,12 +32,14 @@ class vit_decouple(VisionTransformer):
 
         dim = kwargs['embed_dim']
         num_heads = kwargs['num_heads']
+        if self.use_norm:
+            self.shrink_norm = nn.LayerNorm(dim)
         num_expand_layer = 3
         num_queries = 300
         decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=num_heads, dim_feedforward=dim * 4)
         self.decoder = TPN_Decoder(decoder_layer, num_expand_layer)
         self.q = nn.Embedding(num_queries, dim)
-        self.init = 0
+        self.register_buffer("init_once", torch.tensor(0))
 
 
     def forward(self, x):
@@ -55,9 +57,12 @@ class vit_decouple(VisionTransformer):
         attn = None
         for i, blk in enumerate(self.blocks):
             if i == self.shrink_index:
+                if self.use_norm:
+                    x = self.shrink_norm(x)
                 bs, num_token, ch = x.size()
-                if self.init == 0:
-                    self.init = 1
+                if self.init_once == 0:
+                    self.init_once += 1
+                    print("self.q init once!!!!!!!")
                     idx = torch.randint(1, num_token, (self.q.num_embeddings,))
                     init_param = x[:, idx]
                     self.q.weight = nn.Parameter(init_param[0])
