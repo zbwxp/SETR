@@ -96,6 +96,7 @@ class vit_decouple_v12(VisionTransformer):
                 x = x.transpose(0, 1)
                 pos = self.zip_pos_embed.pos_table.clone().detach()
                 pos = pos.repeat(bs, 1, 1)
+                attn = attn.sigmoid()
                 pos_combine = torch.einsum("bql,blc->bqc", attn, pos)
                 x = x + pos_combine
             else:
