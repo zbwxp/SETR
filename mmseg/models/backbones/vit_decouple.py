@@ -94,7 +94,7 @@ class vit_decouple(VisionTransformer):
                 q = self.q.weight + self.zip_pos_embed.pos_table.clone().detach()
                 x, attn = self.decoder(q.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
                 # attn = attn.sigmoid()
-                attn = attn.softmax(dim=1)
+                # attn = attn.softmax(dim=-2)
                 # cos = nn.CosineSimilarity(dim=2)
                 # sim = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
                 # loss_sim = torch.stack(sim, dim=1).mean()
