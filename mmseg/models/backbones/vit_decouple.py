@@ -118,7 +118,7 @@ class vit_decouple(VisionTransformer):
             if i in self.out_indices:
                 if attn is not None:
                     # v14 add residuals
-                    out = outs[i-1] + torch.einsum("bqc,bql->blc", x, attn) / self.q.num_embeddings
+                    out = torch.einsum("bqc,bql->blc", x, attn) / self.q.num_embeddings
                     outs.append(out)
                 else:
                     outs.append(x)
