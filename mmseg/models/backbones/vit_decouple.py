@@ -40,9 +40,11 @@ class vit_decouple(VisionTransformer):
         self.decoder = TPN_Decoder(decoder_layer, num_expand_layer)
         self.q = nn.Embedding(num_queries, dim)
         self.register_buffer("init_once", torch.tensor(0))
+        self.register_buffer("_iter", torch.tensor(0))
 
 
     def forward(self, x):
+        self._iter += 1
         B = x.shape[0]
         x = self.patch_embed(x)
         x = x.flatten(2).transpose(1, 2)
@@ -68,10 +70,12 @@ class vit_decouple(VisionTransformer):
                     self.q.weight = nn.Parameter(init_param[0])
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
                 # attn = attn.sigmoid()
+                attn = attn.softmax(dim=1)
                 cos = nn.CosineSimilarity(dim=2)
                 sim = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
                 loss_sim = torch.stack(sim, dim=1).mean()
-                attn = attn.softmax(dim=1)
+                if self._iter % 100 == 0:
+                    print(loss_sim)
                 x = x.transpose(0, 1)
                 # f, axarr = plt.subplots(3, 3)
                 # axarr[0, 0].imshow(attn[0,0][1:].reshape(32,32).cpu())
