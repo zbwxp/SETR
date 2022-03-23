@@ -35,17 +35,17 @@ class PositionalEncoding(nn.Module):
         return torch.FloatTensor(sinusoid_table).unsqueeze(0)
 
 @BACKBONES.register_module()
-class vit_decouple(VisionTransformer):
+class vit_decouple_v12(VisionTransformer):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
 
     def __init__(self,
-                 shrink_index=4,
+                 shrink_index=7,
                  expand_index=100,
                  num_queries=256,
                  use_norm=True,
                  **kwargs):
-        super(vit_decouple, self).__init__(**kwargs)
+        super(vit_decouple_v12, self).__init__(**kwargs)
         self.shrink_index = shrink_index
         self.expand_index = expand_index
         self.num_queries = num_queries
@@ -63,7 +63,7 @@ class vit_decouple(VisionTransformer):
         self.q = nn.Embedding(num_queries, dim)
         self.register_buffer("init_once", torch.tensor(0))
         self.register_buffer("_iter", torch.tensor(0))
-        self.zip_pos_embed = PositionalEncoding(kwargs['embed_dim'], num_queries)
+        self.zip_pos_embed = PositionalEncoding(kwargs['embed_dim'], 1025)
 
 
     def forward(self, x):
@@ -93,32 +93,14 @@ class vit_decouple(VisionTransformer):
                     self.q.weight = nn.Parameter(init_param[0])
                 # q = self.q.weight + self.zip_pos_embed.pos_table.clone().detach()
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
-                attn = attn.sigmoid()
-                # attn = attn.softmax(dim=-2)
-                # cos = nn.CosineSimilarity(dim=2)
-                # sim = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
-                # loss_sim = torch.stack(sim, dim=1).mean()
-                # if self._iter % 100 == 0 or not self.training:
-                #     print(loss_sim)
                 x = x.transpose(0, 1)
-                # f, axarr = plt.subplots(3, 3)
-                # axarr[0, 0].imshow(attn[0,0][1:].reshape(32,32).cpu())
-                # axarr[0, 1].imshow(attn[0,1][1:].reshape(32,32).cpu())
-                # axarr[0, 2].imshow(attn[0,2][1:].reshape(32,32).cpu())
-                # axarr[1, 0].imshow(attn[0,4][1:].reshape(32,32).cpu())
-                # axarr[1, 1].imshow(attn[0,5][1:].reshape(32,32).cpu())
-                # axarr[1, 2].imshow(attn[0,6][1:].reshape(32,32).cpu())
-                # axarr[2, 0].imshow(attn[0,3][1:].reshape(32,32).cpu())
-                # axarr[2, 1].imshow(attn[0,7][1:].reshape(32,32).cpu())
-                # axarr[2, 2].imshow(attn[0,8][1:].reshape(32,32).cpu())
-                # print()
-
+                pos = self.zip_pos_embed.pos_table.clone().detach()
+                pos = pos.repeat(bs, 1, 1)
+                pos_combine = torch.einsum("bql,blc->bqc", attn, pos)
+                x = x + pos_combine
             else:
                 x = blk(x)
             if i in self.out_indices:
-                if attn is not None:
-                    outs.append(torch.einsum("bqc,bql->blc", x, attn) / self.q.num_embeddings)
-                else:
-                    outs.append(x)
+                outs.append(x)
         # outs.append({"loss_similarity": loss_sim})
         return tuple(outs)
