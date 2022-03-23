@@ -117,7 +117,9 @@ class vit_decouple(VisionTransformer):
                 x = blk(x)
             if i in self.out_indices:
                 if attn is not None:
-                    outs.append(torch.einsum("bqc,bql->blc", x, attn) / self.q.num_embeddings)
+                    # v14 add residuals
+                    out = outs[i-1] + torch.einsum("bqc,bql->blc", x, attn) / self.q.num_embeddings
+                    outs.append(out)
                 else:
                     outs.append(x)
         # outs.append({"loss_similarity": loss_sim})
