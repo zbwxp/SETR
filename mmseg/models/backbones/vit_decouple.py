@@ -91,8 +91,8 @@ class vit_decouple(VisionTransformer):
                     idx = torch.randint(1, num_token, (self.q.num_embeddings,))
                     init_param = x[:, idx]
                     self.q.weight = nn.Parameter(init_param[0])
-                q = self.q.weight + self.zip_pos_embed.pos_table.clone().detach()
-                x, attn = self.decoder(q.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
+                # q = self.q.weight + self.zip_pos_embed.pos_table.clone().detach()
+                x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
                 # attn = attn.sigmoid()
                 # attn = attn.softmax(dim=-2)
                 # cos = nn.CosineSimilarity(dim=2)
