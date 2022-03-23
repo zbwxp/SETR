@@ -79,7 +79,7 @@ class Attention(nn.Module):
                                       C // self.num_heads).permute(0, 2, 1, 3)
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
-        attn_save = attn.clone()
+        attn_save = attn.softmax(dim=-1)
         attn = attn.softmax(dim=-2)
         attn = self.attn_drop(attn)
 
