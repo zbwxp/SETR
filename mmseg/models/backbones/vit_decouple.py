@@ -11,6 +11,28 @@ from .decoder_attn import *
 from .vit import VisionTransformer
 from ..builder import BACKBONES
 import matplotlib.pyplot as plt
+import numpy as np
+
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_hid, n_position=200):
+        super(PositionalEncoding, self).__init__()
+
+        # Not a parameter
+        self.register_buffer('pos_table', self._get_sinusoid_encoding_table(n_position, d_hid))
+
+    def _get_sinusoid_encoding_table(self, n_position, d_hid):
+        ''' Sinusoid position encoding table '''
+        # TODO: make it with torch instead of numpy
+
+        def get_position_angle_vec(position):
+            return [position / np.power(10000, 2 * (hid_j // 2) / d_hid) for hid_j in range(d_hid)]
+
+        sinusoid_table = np.array([get_position_angle_vec(pos_i) for pos_i in range(n_position)])
+        sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
+        sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
+
+        return torch.FloatTensor(sinusoid_table).unsqueeze(0)
 
 @BACKBONES.register_module()
 class vit_decouple(VisionTransformer):
@@ -41,6 +63,7 @@ class vit_decouple(VisionTransformer):
         self.q = nn.Embedding(num_queries, dim)
         self.register_buffer("init_once", torch.tensor(0))
         self.register_buffer("_iter", torch.tensor(0))
+        self.zip_pos_embed = PositionalEncoding(kwargs['embed_dim'], num_queries)
 
 
     def forward(self, x):
@@ -68,14 +91,15 @@ class vit_decouple(VisionTransformer):
                     idx = torch.randint(1, num_token, (self.q.num_embeddings,))
                     init_param = x[:, idx]
                     self.q.weight = nn.Parameter(init_param[0])
-                x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
+                q = self.q.weight + self.zip_pos_embed.pos_table.clone().detach()
+                x, attn = self.decoder(q.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
                 # attn = attn.sigmoid()
                 attn = attn.softmax(dim=1)
-                cos = nn.CosineSimilarity(dim=2)
-                sim = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
-                loss_sim = torch.stack(sim, dim=1).mean()
-                if self._iter % 100 == 0:
-                    print(loss_sim)
+                # cos = nn.CosineSimilarity(dim=2)
+                # sim = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
+                # loss_sim = torch.stack(sim, dim=1).mean()
+                # if self._iter % 100 == 0 or not self.training:
+                #     print(loss_sim)
                 x = x.transpose(0, 1)
                 # f, axarr = plt.subplots(3, 3)
                 # axarr[0, 0].imshow(attn[0,0][1:].reshape(32,32).cpu())
@@ -96,5 +120,5 @@ class vit_decouple(VisionTransformer):
                     outs.append(torch.einsum("bqc,bql->blc", x, attn) / self.q.num_embeddings)
                 else:
                     outs.append(x)
-        outs.append({"loss_similarity": loss_sim})
+        # outs.append({"loss_similarity": loss_sim})
         return tuple(outs)
