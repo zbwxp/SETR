@@ -116,7 +116,7 @@ class vit_decouple(VisionTransformer):
                 # print()
             if i in self.out_indices:
                 if attn is not None:
-                    out = torch.einsum("bqc,bql->blc", x, attn.sigmoid()) / self.q.num_embeddings
+                    out = torch.einsum("bqc,bql->blc", x, attn.softmax(dim=-2)) / self.q.num_embeddings
                     if i == self.shrink_index:
                         loss = nn.MSELoss()
                         loss_mse = loss(out, x_)
