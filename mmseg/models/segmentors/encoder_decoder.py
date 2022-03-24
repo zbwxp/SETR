@@ -152,9 +152,9 @@ class EncoderDecoder(BaseSegmentor):
 
         x = self.extract_feat(img)
         losses = dict()
-        # if len(x) > 12:
-        #     loss = x[-1]
-        #     losses.update(loss)
+        if len(x) > 12:
+            loss = x[-1]
+            losses.update(loss)
 
         loss_decode = self._decode_head_forward_train(x, img_metas,
                                                       gt_semantic_seg)
