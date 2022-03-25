@@ -116,7 +116,7 @@ class vit_decouple(VisionTransformer):
             self.shrink_norm = nn.LayerNorm(dim)
         num_expand_layer = 3
         num_queries = 300
-        decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=num_heads, dim_feedforward=dim * 4)
+        decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=2, dim_feedforward=dim * 4)
         self.decoder = TPN_Decoder(decoder_layer, num_expand_layer)
         self.q = nn.Embedding(num_queries, dim)
         self.register_buffer("init_once", torch.tensor(0))
