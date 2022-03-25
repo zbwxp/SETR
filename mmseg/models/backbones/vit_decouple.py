@@ -164,8 +164,8 @@ class vit_decouple(VisionTransformer):
                 sim_x = [cos(x, x[:, i][:, None]) for i in range(self.q.num_embeddings)]
                 loss_x = torch.stack(sim_x, dim=1)
                 loss_sim = (loss_attn + loss_x).mean()
-                # if self._iter % 200 == 0:
-                print(loss_sim)
+                if self._iter % 200 == 0:
+                    print(loss_sim)
             if i in self.out_indices:
                 if attn is not None:
                     val, idx = attn.max(-2)
