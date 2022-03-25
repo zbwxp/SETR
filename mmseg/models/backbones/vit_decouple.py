@@ -116,7 +116,7 @@ class vit_decouple(VisionTransformer):
             self.shrink_norm = nn.LayerNorm(dim)
         num_expand_layer = 3
         num_queries = 300
-        decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=num_heads, dim_feedforward=dim * 4)
+        decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=4, dim_feedforward=dim * 4)
         self.decoder = TPN_Decoder(decoder_layer, num_expand_layer)
         self.q = nn.Embedding(num_queries, dim)
         self.register_buffer("init_once", torch.tensor(0))
@@ -156,7 +156,7 @@ class vit_decouple(VisionTransformer):
                     init_param = x[:, idx]
                     self.q.weight = nn.Parameter(init_param[0])
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
-                attn = attn.sigmoid()
+                attn = attn.softmax(-2)
                 x = x.transpose(0, 1)
                 cos = nn.CosineSimilarity(dim=2)
                 sim_attn = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
@@ -168,7 +168,8 @@ class vit_decouple(VisionTransformer):
                     print(loss_sim)
             if i in self.out_indices:
                 if attn is not None:
-                    out = torch.einsum("bqc,bql->blc", x, attn) / self.q.num_embeddings
+                    val, idx = attn.max(-2)
+                    out = torch.stack([x_i[idx_i] for x_i, idx_i in zip(x, idx)]) * val[:, :, None]
                     if i == self.shrink_index:
                         loss = nn.MSELoss()
                         loss_mse = loss(self.attn_proj(out), x_)
