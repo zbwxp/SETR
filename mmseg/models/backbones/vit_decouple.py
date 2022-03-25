@@ -143,8 +143,11 @@ class vit_decouple(VisionTransformer):
             x = blk(x)
             if i == self.shrink_index:
                 if self.use_norm:
+                    x = x[:, 1:]
                     x = self.shrink_norm(x)
                     x_ = x.clone().detach()
+                # supervise right before
+                outs.append(x)
                 bs, num_token, ch = x.size()
                 if self.init_once == 0:
                     self.init_once += 1
@@ -152,27 +155,9 @@ class vit_decouple(VisionTransformer):
                     idx = torch.randint(1, num_token, (self.q.num_embeddings,))
                     init_param = x[:, idx]
                     self.q.weight = nn.Parameter(init_param[0])
-                # q = self.q.weight + self.zip_pos_embed.pos_table.clone().detach()
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
-                # attn = attn.sigmoid()
-                # attn = attn.softmax(dim=-2)
-                # cos = nn.CosineSimilarity(dim=2)
-                # sim = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
-                # loss_sim = torch.stack(sim, dim=1).mean()
-                # if self._iter % 100 == 0 or not self.training:
-                #     print(loss_sim)
                 x = x.transpose(0, 1)
-                # f, axarr = plt.subplots(3, 3)
-                # axarr[0, 0].imshow(attn[0,0][1:].reshape(32,32).cpu())
-                # axarr[0, 1].imshow(attn[0,1][1:].reshape(32,32).cpu())
-                # axarr[0, 2].imshow(attn[0,2][1:].reshape(32,32).cpu())
-                # axarr[1, 0].imshow(attn[0,4][1:].reshape(32,32).cpu())
-                # axarr[1, 1].imshow(attn[0,5][1:].reshape(32,32).cpu())
-                # axarr[1, 2].imshow(attn[0,6][1:].reshape(32,32).cpu())
-                # axarr[2, 0].imshow(attn[0,3][1:].reshape(32,32).cpu())
-                # axarr[2, 1].imshow(attn[0,7][1:].reshape(32,32).cpu())
-                # axarr[2, 2].imshow(attn[0,8][1:].reshape(32,32).cpu())
-                # print()
+
             if i in self.out_indices:
                 if attn is not None:
                     out = torch.einsum("bqc,bql->blc", x, attn.sigmoid()) / self.q.num_embeddings
@@ -182,8 +167,6 @@ class vit_decouple(VisionTransformer):
                     outs.append(out)
                 else:
                     outs.append(x)
-        # outs.append({"loss_similarity": loss_sim})
-        # outs.append(attn.transpose(-1, -2))
         outs.append({"loss_mse": loss_mse * 10})
 
         return tuple(outs)

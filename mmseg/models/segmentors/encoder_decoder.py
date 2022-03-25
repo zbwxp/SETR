@@ -152,7 +152,7 @@ class EncoderDecoder(BaseSegmentor):
 
         x = self.extract_feat(img)
         losses = dict()
-        if len(x) > 12:
+        if len(x) > 13:
             loss = x[-1]
             losses.update(loss)
 
