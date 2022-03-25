@@ -80,11 +80,11 @@ class Attention(nn.Module):
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         # attn_save = attn.softmax(dim=-1)
-        # attn_save = attn.clone()
-        attn = attn.softmax(dim=-2)
+        attn_save = attn.clone()
+        attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
         x = (attn @ v).transpose(1, 2).reshape(B, Nq, C)
         x = self.proj(x)
         x = self.proj_drop(x)
-        return x.transpose(0, 1), attn.sum(dim=1) / self.num_heads
+        return x.transpose(0, 1), attn_save.sum(dim=1) / self.num_heads

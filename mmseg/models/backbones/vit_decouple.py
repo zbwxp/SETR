@@ -156,12 +156,12 @@ class vit_decouple(VisionTransformer):
                     init_param = x[:, idx]
                     self.q.weight = nn.Parameter(init_param[0])
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
-                # attn = attn.sigmoid()
+                attn = attn.sigmoid()
                 x = x.transpose(0, 1)
-                # cos = nn.CosineSimilarity(dim=2)
-                # sim_attn = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
-                cos1 = nn.CosineSimilarity(dim=1)
-                sim_attn = [cos1(attn, attn[:, :, 0, None]) for i in range(attn.size()[-1])]
+                cos = nn.CosineSimilarity(dim=2)
+                sim_attn = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
+                # cos1 = nn.CosineSimilarity(dim=1)
+                # sim_attn = [cos1(attn, attn[:, :, 0, None]) for i in range(attn.size()[-1])]
                 loss_attn = torch.stack(sim_attn, dim=1)
                 cos2 = nn.CosineSimilarity(dim=2)
                 sim_x = [cos2(x, x[:, i][:, None]) for i in range(self.q.num_embeddings)]
@@ -179,6 +179,6 @@ class vit_decouple(VisionTransformer):
                     outs.append(out)
                 else:
                     outs.append(x)
-        outs.append({"loss_similarity": loss_sim * 10.0})
+        outs.append({"loss_similarity": loss_sim * 1.0})
 
         return tuple(outs)

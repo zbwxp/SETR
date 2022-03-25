@@ -23,6 +23,14 @@ def cross_entropy(pred,
         reduction='none',
         ignore_index=ignore_index)
 
+    # add a rescale elementalwise weight
+    weight = torch.zeros_like(loss) + 1.0
+    for label_, weight_ in zip(label, weight):
+        uni = torch.stack(label_.unique(return_counts=True))
+        uni = uni[:, uni[0] != ignore_index]
+        for uni_ in uni.T:
+            weight_[label_ == uni_[0]] /= float(uni_[1])
+
     # apply weights and do the reduction
     if weight is not None:
         weight = weight.float()
