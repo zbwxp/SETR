@@ -80,7 +80,7 @@ class Attention(nn.Module):
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         # attn_save = attn.softmax(dim=-1)
-        attn_save = attn.clone()
+        attn_save = attn.softmax(dim=-2)
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
