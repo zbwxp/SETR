@@ -167,6 +167,6 @@ class vit_decouple(VisionTransformer):
                     outs.append(out)
                 else:
                     outs.append(x)
-        outs.append({"loss_mse": loss_mse * 10})
+        outs.append({"loss_mse": loss_mse * 0.0})
 
         return tuple(outs)
