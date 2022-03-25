@@ -156,7 +156,7 @@ class vit_decouple(VisionTransformer):
                     init_param = x[:, idx]
                     self.q.weight = nn.Parameter(init_param[0])
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
-                attn = attn.softmax(-2)
+                # attn = attn.sigmoid()
                 x = x.transpose(0, 1)
                 cos = nn.CosineSimilarity(dim=2)
                 sim_attn = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
@@ -169,7 +169,7 @@ class vit_decouple(VisionTransformer):
             if i in self.out_indices:
                 if attn is not None:
                     val, idx = attn.max(-2)
-                    out = torch.stack([x_i[idx_i] for x_i, idx_i in zip(x, idx)]) * val[:, :, None]
+                    out = torch.stack([x_i[idx_i] for x_i, idx_i in zip(x, idx)]) * val[:, :, None].sigmoid()
                     if i == self.shrink_index:
                         loss = nn.MSELoss()
                         loss_mse = loss(self.attn_proj(out), x_)
