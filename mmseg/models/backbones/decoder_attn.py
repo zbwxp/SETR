@@ -37,17 +37,17 @@ class TPN_DecoderLayer(TransformerDecoderLayer):
                 memory_mask: Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None,
                 memory_key_padding_mask: Optional[Tensor] = None) -> Tensor:
-        tgt2 = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask,
+        tgt2 = self.norm1(tgt)
+        tgt2 = self.self_attn(tgt2, tgt2, tgt2, attn_mask=tgt_mask,
                               key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout1(tgt2)
-        tgt = self.norm1(tgt)
+        tgt2 = self.norm2(tgt)
         tgt2, attn2 = self.multihead_attn(
-            tgt.transpose(0, 1), memory.transpose(0, 1), memory.transpose(0, 1))
+            tgt2.transpose(0, 1), memory.transpose(0, 1), memory.transpose(0, 1))
         tgt = tgt + self.dropout2(tgt2)
-        tgt = self.norm2(tgt)
-        tgt2 = self.linear2(self.dropout(self.activation(self.linear1(tgt))))
+        tgt2 = self.norm3(tgt)
+        tgt2 = self.linear2(self.dropout(self.activation(self.linear1(tgt2))))
         tgt = tgt + self.dropout3(tgt2)
-        tgt = self.norm3(tgt)
         return tgt, attn2
 
 class Attention(nn.Module):
@@ -80,7 +80,7 @@ class Attention(nn.Module):
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         # attn_save = attn.softmax(dim=-1)
-        attn_save = attn.softmax(dim=-2)
+        attn_save = attn.clone().detach()
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 

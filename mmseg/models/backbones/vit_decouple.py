@@ -142,10 +142,10 @@ class vit_decouple(VisionTransformer):
         for i, blk in enumerate(self.blocks):
             x = blk(x)
             if i == self.shrink_index:
-                if self.use_norm:
-                    x = x[:, 1:]
-                    x = self.shrink_norm(x)
-                    x_ = x.clone().detach()
+                # if self.use_norm:
+                #     x = x[:, 1:]
+                #     x = self.shrink_norm(x)
+                x_ = x.clone().detach()
                 # supervise right before
                 outs.append(x)
                 bs, num_token, ch = x.size()
@@ -160,7 +160,7 @@ class vit_decouple(VisionTransformer):
 
             if i in self.out_indices:
                 if attn is not None:
-                    out = torch.einsum("bqc,bql->blc", x, attn) / self.q.num_embeddings
+                    out = torch.einsum("bqc,bql->blc", x, attn.sigmoid()) / self.q.num_embeddings
                     if i == self.shrink_index:
                         loss = nn.MSELoss()
                         loss_mse = loss(self.attn_proj(out), x_)
