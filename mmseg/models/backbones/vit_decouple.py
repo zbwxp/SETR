@@ -158,9 +158,9 @@ class vit_decouple(VisionTransformer):
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
                 x = x.transpose(0, 1)
                 cos = nn.CosineSimilarity(dim=2)
-                sim = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
+                sim = [cos(x, x[:, i][:, None]) for i in range(self.q.num_embeddings)]
                 loss_sim = torch.stack(sim, dim=1).mean()
-
+                print(loss_sim)
             if i in self.out_indices:
                 if attn is not None:
                     out = torch.einsum("bqc,bql->blc", x, attn.sigmoid()) / self.q.num_embeddings
