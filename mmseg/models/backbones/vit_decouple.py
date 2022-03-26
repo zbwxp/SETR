@@ -115,7 +115,7 @@ class vit_decouple(VisionTransformer):
         if self.use_norm:
             self.shrink_norm = nn.LayerNorm(dim)
         num_expand_layer = 3
-        num_queries = 300
+        num_queries = 256
         decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=4, dim_feedforward=dim * 4)
         self.decoder = TPN_Decoder(decoder_layer, num_expand_layer)
         self.q = nn.Embedding(num_queries, dim)
@@ -142,9 +142,6 @@ class vit_decouple(VisionTransformer):
         for i, blk in enumerate(self.blocks):
             x = blk(x)
             if i == self.shrink_index:
-                # if self.use_norm:
-                #     x = x[:, 1:]
-                #     x = self.shrink_norm(x)
                 x_ = x.clone().detach()
                 # supervise right before
                 outs.append(x)
@@ -152,33 +149,14 @@ class vit_decouple(VisionTransformer):
                 if self.init_once == 0:
                     self.init_once += 1
                     print("self.q init once!!!!!!!")
-                    idx = torch.randint(1, num_token, (self.q.num_embeddings,))
-                    init_param = x[:, idx]
-                    self.q.weight = nn.Parameter(init_param[0])
+                    x_reshape = x[:, 1:].transpose(-1, -2).reshape(bs, ch, 32, 32)
+                    x_init = x_reshape[:, :, ::2, ::2]
+                    x_init = x_init.flatten(-2).transpose(-1, -2)
+                    self.q.weight = nn.Parameter(x_init[0])
                 x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
-                attn = attn.sigmoid()
                 x = x.transpose(0, 1)
-                cos = nn.CosineSimilarity(dim=2)
-                sim_attn = [cos(attn, attn[:, i][:, None]) for i in range(self.q.num_embeddings)]
-                # cos1 = nn.CosineSimilarity(dim=1)
-                # sim_attn = [cos1(attn, attn[:, :, 0, None]) for i in range(attn.size()[-1])]
-                loss_attn = torch.stack(sim_attn, dim=1)
-                cos2 = nn.CosineSimilarity(dim=2)
-                sim_x = [cos2(x, x[:, i][:, None]) for i in range(self.q.num_embeddings)]
-                loss_x = torch.stack(sim_x, dim=1)
-                loss_sim = loss_attn.mean() + loss_x.mean()
-                if self._iter % 200 == 0:
-                    print(loss_sim)
+
             if i in self.out_indices:
-                if attn is not None:
-                    val, idx = attn.max(-2)
-                    out = torch.stack([x_i[idx_i] for x_i, idx_i in zip(x, idx)]) * val[:, :, None]
-                    if i == self.shrink_index:
-                        loss = nn.MSELoss()
-                        loss_mse = loss(self.attn_proj(out), x_)
-                    outs.append(out)
-                else:
                     outs.append(x)
-        outs.append({"loss_similarity": loss_sim * 1.0})
 
         return tuple(outs)

@@ -37,10 +37,10 @@ class TPN_DecoderLayer(TransformerDecoderLayer):
                 memory_mask: Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None,
                 memory_key_padding_mask: Optional[Tensor] = None) -> Tensor:
-        # tgt2 = self.norm1(tgt)
-        # tgt2 = self.self_attn(tgt2, tgt2, tgt2, attn_mask=tgt_mask,
-        #                       key_padding_mask=tgt_key_padding_mask)[0]
-        # tgt = tgt + self.dropout1(tgt2)
+        tgt2 = self.norm1(tgt)
+        tgt2 = self.self_attn(tgt2, tgt2, tgt2, attn_mask=tgt_mask,
+                              key_padding_mask=tgt_key_padding_mask)[0]
+        tgt = tgt + self.dropout1(tgt2)
         tgt2 = self.norm2(tgt)
         tgt2, attn2 = self.multihead_attn(
             tgt2.transpose(0, 1), memory.transpose(0, 1), memory.transpose(0, 1))
@@ -80,11 +80,12 @@ class Attention(nn.Module):
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         # attn_save = attn.softmax(dim=-1)
-        attn_save = attn.clone()
+        # attn_save = attn.clone()
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
         x = (attn @ v).transpose(1, 2).reshape(B, Nq, C)
         x = self.proj(x)
         x = self.proj_drop(x)
-        return x.transpose(0, 1), attn_save.sum(dim=1) / self.num_heads
+        return x.transpose(0, 1), None
+            # , attn_save.sum(dim=1) / self.num_heads
