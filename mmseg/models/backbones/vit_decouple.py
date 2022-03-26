@@ -152,7 +152,7 @@ class vit_decouple(VisionTransformer):
                     x_init = x_reshape[:, :, ::2, ::2]
                     x_init = x_init.flatten(-2).transpose(-1, -2)
                     self.q.weight = nn.Parameter(x_init[0])
-                x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1).detach())
+                x, attn = self.decoder(self.q.weight.repeat(bs, 1, 1).transpose(0, 1), x.transpose(0, 1))
                 x = x.transpose(0, 1)
 
             if i in self.out_indices:

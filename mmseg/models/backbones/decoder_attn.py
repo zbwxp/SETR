@@ -37,12 +37,11 @@ class TPN_DecoderLayer(TransformerDecoderLayer):
                 memory_mask: Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None,
                 memory_key_padding_mask: Optional[Tensor] = None) -> Tensor:
-        # tgt2 = self.norm1(tgt)
-        # tgt2 = self.self_attn(tgt2, tgt2, tgt2, attn_mask=tgt_mask,
-        #                       key_padding_mask=tgt_key_padding_mask)[0]
-        # tgt = tgt + self.dropout1(tgt2)
-        # tgt2 = self.norm2(tgt)
-        tgt2 = tgt
+        tgt2 = self.norm1(tgt)
+        tgt2 = self.self_attn(tgt2, tgt2, tgt2, attn_mask=tgt_mask,
+                              key_padding_mask=tgt_key_padding_mask)[0]
+        tgt = tgt + self.dropout1(tgt2)
+        tgt2 = self.norm2(tgt)
         tgt2, attn2 = self.multihead_attn(
             tgt2.transpose(0, 1), memory.transpose(0, 1), memory.transpose(0, 1))
         tgt = tgt + self.dropout2(tgt2)
