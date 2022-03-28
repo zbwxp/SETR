@@ -85,7 +85,7 @@ class v2(VisionTransformerUpHead):
                 nn.init.constant_(m.weight, 1.0)
 
     def forward(self, x):
-        base = x[2][:, 1:]
+        base = x[2][:, 1:].detach()
         base = self.base_proj(base)
         x = self._transform_inputs(x)
         x = self.input_proj(x)

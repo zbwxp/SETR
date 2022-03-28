@@ -188,11 +188,11 @@ class Attention(nn.Module):
                                       C // self.num_heads).permute(2, 0, 3, 1, 4)
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
         if shrink:
             attn = self.shrink(attn.transpose(-2, -1)).transpose(-2, -1)
             N = self.out_n
-        attn = attn.softmax(dim=-1)
-        attn = self.attn_drop(attn)
 
         x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         x = self.proj(x)
