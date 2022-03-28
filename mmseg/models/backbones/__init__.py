@@ -31,6 +31,7 @@ from .vit_4x4_2step import vit_4x4_2step
 from .vit_decouple import vit_decouple
 from .vit_decouple_v12 import vit_decouple_v12
 from .vit_plain import vit_plain
+from .vit_v2 import vit_v2
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
