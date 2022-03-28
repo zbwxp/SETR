@@ -178,7 +178,7 @@ class Attention(nn.Module):
         self.attn_drop = nn.Dropout(attn_drop)
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
-        self.out_n = 100
+        self.out_n = 300
         if shrink:
             self.shrink = Mlp(in_features=1025, hidden_features=512, out_features=self.out_n)
 

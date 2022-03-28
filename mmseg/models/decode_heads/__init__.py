@@ -64,7 +64,7 @@ from .TPN_para import TPN_para
 from .TPN_roll import TPN_roll
 from .TPN_merge import TPN_merge
 from .TPN_3x_roll import TPN_3x_roll
-
+from .v2 import v2
 
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
