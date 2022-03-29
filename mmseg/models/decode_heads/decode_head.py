@@ -213,23 +213,25 @@ class BaseDecodeHead(nn.Module, metaclass=ABCMeta):
     @force_fp32(apply_to=('seg_logit', ))
     def losses(self, seg_logit, seg_label):
         """Compute segmentation loss."""
-        loss = dict()
+        if isinstance(seg_logit, dict):
+            # atm loss
+            seg_label = seg_label.squeeze(1)
+            loss = self.loss_decode(
+                seg_logit,
+                seg_label,
+                weight=None,
+                ignore_index=self.ignore_index)
+
+            loss['acc_seg'] = accuracy(seg_logit["pred"], seg_label)
+            return loss
+
         seg_logit = resize(
             input=seg_logit,
             size=seg_label.shape[2:],
             mode='bilinear',
             align_corners=self.align_corners)
         if self.sampler is not None:
-            label = seg_label.squeeze(1)
-            # add a rescale elementalwise weight
-            weight = torch.zeros_like(label) + 1.0
-            for label_, weight_ in zip(label, weight):
-                uni = torch.stack(label_.unique(return_counts=True))
-                uni = uni[:, uni[0] != self.ignore_index]
-                for uni_ in uni.T:
-                    weight_[label_ == uni_[0]] /= float(uni_[1])
-            seg_weight = weight
-            # seg_weight = self.sampler.sample(seg_logit, seg_label)
+            seg_weight = self.sampler.sample(seg_logit, seg_label)
         else:
             seg_weight = None
         seg_label = seg_label.squeeze(1)
@@ -240,3 +242,4 @@ class BaseDecodeHead(nn.Module, metaclass=ABCMeta):
             ignore_index=self.ignore_index)
         loss['acc_seg'] = accuracy(seg_logit, seg_label)
         return loss
+
