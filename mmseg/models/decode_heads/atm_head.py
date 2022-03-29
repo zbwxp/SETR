@@ -124,6 +124,7 @@ class ATMHead(BaseDecodeHead):
     def __init__(self,
                  img_size=768,
                  embed_dim=1024,
+                 reverse=False,
                  norm_layer=partial(nn.LayerNorm, eps=1e-6),
                  norm_cfg=None,
                  num_conv=1,
@@ -134,6 +135,8 @@ class ATMHead(BaseDecodeHead):
         super(ATMHead, self).__init__(**kwargs)
         self.image_size = img_size
         self.use_stages = [3, 7, 11]
+        if reverse:
+            self.use_stages.reverse()
         nhead = 12
         dim = embed_dim
         num_expand_layer = 3
