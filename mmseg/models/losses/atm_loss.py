@@ -63,8 +63,10 @@ class ATMLoss(nn.Module):
             masks = []
             for cls in gt_cls:
                 masks.append(targets_per_image == cls)
-            masks = torch.stack(masks, dim=0)
+            if len(gt_cls) == 0:
+                masks.append(targets_per_image == self.ignore_index)
 
+            masks = torch.stack(masks, dim=0)
             new_targets.append(
                 {
                     "labels": gt_cls,
