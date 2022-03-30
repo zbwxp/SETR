@@ -125,6 +125,7 @@ class ATMHead(BaseDecodeHead):
                  img_size=768,
                  embed_dim=1024,
                  reverse=False,
+                 addup_lateral=False,
                  norm_layer=partial(nn.LayerNorm, eps=1e-6),
                  norm_cfg=None,
                  num_conv=1,
@@ -134,6 +135,7 @@ class ATMHead(BaseDecodeHead):
                  **kwargs):
         super(ATMHead, self).__init__(**kwargs)
         self.image_size = img_size
+        self.addup_lateral = addup_lateral
         self.use_stages = [3, 7, 11]
         if reverse:
             self.use_stages.reverse()
@@ -180,9 +182,12 @@ class ATMHead(BaseDecodeHead):
         qs = []
         q = self.q.weight.repeat(bs, 1, 1).transpose(0, 1)
 
-        for x_, proj_, norm_, decoder_ in zip(x, self.input_proj, self.proj_norm, self.decoder):
+        for idx, (x_, proj_, norm_, decoder_) in enumerate(zip(x, self.input_proj, self.proj_norm, self.decoder)):
             lateral = norm_(proj_(x_))
-            laterals.append(lateral)
+            if idx == 0 or not self.addup_lateral:
+                laterals.append(lateral)
+            else:
+                laterals.append(lateral + laterals[idx-1])
             q, attn = decoder_(q, lateral.transpose(0, 1))
             attn = attn.transpose(-1, -2)
             if attn.dim() == 3:
