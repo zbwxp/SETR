@@ -160,7 +160,7 @@ class ATMHead(BaseDecodeHead):
             # decoder layer
             # head = (len(self.use_stages) - i)*4
             decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=nhead, dim_feedforward=dim * 4)
-            decoder = TPN_Decoder(decoder_layer, num_expand_layer - i)
+            decoder = TPN_Decoder(decoder_layer, num_expand_layer)
             self.add_module("decoder_{}".format(i + 1), decoder)
             atm_decoders.append(decoder)
             cls_embed = nn.Linear(dim, self.num_classes + 1)
@@ -204,7 +204,10 @@ class ATMHead(BaseDecodeHead):
                 h = w = int(math.sqrt(hw))
                 attn = attn.transpose(1, 2).reshape(n, c, h, w)
             maps_size.append(attn.size()[-2:])
-            qs.append(cls_embed_(q.transpose(0, 1)))
+            if idx == 0:
+                qs.append(cls_embed_(q.transpose(0, 1)))
+            else:
+                qs.append(cls_embed_(q.transpose(0, 1)) + qs[idx-1])
             attns.append(attn)
         qs = torch.stack(qs, dim=0)
         outputs_class = qs
