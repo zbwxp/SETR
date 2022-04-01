@@ -40,10 +40,10 @@ class TPN_DecoderLayer(TransformerDecoderLayer):
                 memory_mask: Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None,
                 memory_key_padding_mask: Optional[Tensor] = None) -> Tensor:
-        tgt2 = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask,
-                              key_padding_mask=tgt_key_padding_mask)[0]
-        tgt = tgt + self.dropout1(tgt2)
-        tgt = self.norm1(tgt)
+        # tgt2 = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask,
+        #                       key_padding_mask=tgt_key_padding_mask)[0]
+        # tgt = tgt + self.dropout1(tgt2)
+        # tgt = self.norm1(tgt)
         tgt2, attn2 = self.multihead_attn(
             tgt.transpose(0, 1), memory.transpose(0, 1), memory.transpose(0, 1))
         tgt = tgt + self.dropout2(tgt2)
@@ -146,7 +146,6 @@ class ATMHead(BaseDecodeHead):
         input_proj = []
         proj_norm = []
         atm_decoders = []
-        cls_embeds = []
         for i in range(len(self.use_stages)):
             # FC layer to change ch
             proj = nn.Linear(self.in_channels, dim)
@@ -158,24 +157,19 @@ class ATMHead(BaseDecodeHead):
             self.add_module("proj_norm_{}".format(i + 1), norm)
             proj_norm.append(norm)
             # decoder layer
-            head = (len(self.use_stages) - i)*4
-            decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=head, dim_feedforward=dim * 4)
+            decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=nhead, dim_feedforward=dim * 4)
             decoder = TPN_Decoder(decoder_layer, num_expand_layer)
             self.add_module("decoder_{}".format(i + 1), decoder)
             atm_decoders.append(decoder)
-            cls_embed = nn.Linear(dim, self.num_classes + 1)
-            self.add_module("cls_embed_{}".format(i + 1), cls_embed)
-            cls_embeds.append(cls_embed)
 
         self.input_proj = input_proj
         self.proj_norm = proj_norm
         self.decoder = atm_decoders
-        self.cls_embed = cls_embeds
         self.q = nn.Embedding(self.num_classes, dim)
 
-        # self.class_embed = nn.Linear(dim, self.num_classes + 1)
-        # mask_dim = self.num_classes
-        # self.mask_embed = MLP(dim, dim, mask_dim, 3)
+        self.class_embed = nn.Linear(dim, self.num_classes + 1)
+        mask_dim = self.num_classes
+        self.mask_embed = MLP(dim, dim, mask_dim, 3)
 
     def forward(self, inputs):
         """Forward function."""
@@ -188,8 +182,7 @@ class ATMHead(BaseDecodeHead):
         qs = []
         q = self.q.weight.repeat(bs, 1, 1).transpose(0, 1)
 
-        for idx, (x_, proj_, norm_, decoder_, cls_embed_) in \
-                enumerate(zip(x, self.input_proj, self.proj_norm, self.decoder, self.cls_embed)):
+        for idx, (x_, proj_, norm_, decoder_) in enumerate(zip(x, self.input_proj, self.proj_norm, self.decoder)):
             lateral = norm_(proj_(x_))
             if idx == 0 or not self.addup_lateral:
                 laterals.append(lateral)
@@ -204,11 +197,10 @@ class ATMHead(BaseDecodeHead):
                 h = w = int(math.sqrt(hw))
                 attn = attn.transpose(1, 2).reshape(n, c, h, w)
             maps_size.append(attn.size()[-2:])
-            qs.append(cls_embed_(q.transpose(0, 1)))
+            qs.append(q.transpose(0, 1))
             attns.append(attn)
         qs = torch.stack(qs, dim=0)
-        outputs_class = qs
-        # outputs_class = self.class_embed(qs)
+        outputs_class = self.class_embed(qs)
         out = {"pred_logits": outputs_class[-1]}
 
         outputs_seg_masks = []
