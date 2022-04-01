@@ -158,8 +158,8 @@ class ATMHead(BaseDecodeHead):
             self.add_module("proj_norm_{}".format(i + 1), norm)
             proj_norm.append(norm)
             # decoder layer
-            head = (len(self.use_stages) - i)*4
-            decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=head, dim_feedforward=dim * 4)
+            # head = (len(self.use_stages) - i)*4
+            decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=nhead, dim_feedforward=dim * 4)
             decoder = TPN_Decoder(decoder_layer, num_expand_layer - i)
             self.add_module("decoder_{}".format(i + 1), decoder)
             atm_decoders.append(decoder)
