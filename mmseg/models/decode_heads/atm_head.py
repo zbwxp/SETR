@@ -160,7 +160,7 @@ class ATMHead(BaseDecodeHead):
             # decoder layer
             head = (len(self.use_stages) - i)*4
             decoder_layer = TPN_DecoderLayer(d_model=dim, nhead=head, dim_feedforward=dim * 4)
-            decoder = TPN_Decoder(decoder_layer, num_expand_layer)
+            decoder = TPN_Decoder(decoder_layer, num_expand_layer - i)
             self.add_module("decoder_{}".format(i + 1), decoder)
             atm_decoders.append(decoder)
             cls_embed = nn.Linear(dim, self.num_classes + 1)
