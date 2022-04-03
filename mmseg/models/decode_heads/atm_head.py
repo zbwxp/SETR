@@ -128,6 +128,7 @@ class ATMHead(BaseDecodeHead):
                  reverse=False,
                  addup_lateral=False,
                  use_stages=[3, 7, 11],
+                 ignore_proj=False,
                  norm_layer=partial(nn.LayerNorm, eps=1e-6),
                  norm_cfg=None,
                  num_conv=1,
@@ -153,10 +154,14 @@ class ATMHead(BaseDecodeHead):
             # FC layer to change ch
             proj = nn.Linear(self.in_channels, dim)
             trunc_normal_(proj.weight, std=.02)
+            if ignore_proj:
+                proj = nn.Identity()
             self.add_module("input_proj_{}".format(i + 1), proj)
             input_proj.append(proj)
             # norm layer
             norm = nn.LayerNorm(dim)
+            if ignore_proj:
+                norm = nn.Identity()
             self.add_module("proj_norm_{}".format(i + 1), norm)
             proj_norm.append(norm)
             # decoder layer

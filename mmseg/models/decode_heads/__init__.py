@@ -66,7 +66,7 @@ from .TPN_merge import TPN_merge
 from .TPN_3x_roll import TPN_3x_roll
 from .v2 import v2
 from .atm_head import ATMHead
-
+from .atm_tpn_roll import ATM_TPN_roll
 
 __all__ = ['VisionTransformerUpHead', 'VIT_MLAHead', 'VIT_MLA_AUXIHead'
 ]

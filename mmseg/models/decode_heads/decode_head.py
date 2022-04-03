@@ -9,7 +9,7 @@ from mmseg.core import build_pixel_sampler
 from mmseg.ops import resize
 from ..builder import build_loss
 from ..losses import accuracy
-
+from ..losses import cross_entropy
 
 class BaseDecodeHead(nn.Module, metaclass=ABCMeta):
     """Base class for BaseDecodeHead.
@@ -223,6 +223,15 @@ class BaseDecodeHead(nn.Module, metaclass=ABCMeta):
                 ignore_index=self.ignore_index)
 
             loss['acc_seg'] = accuracy(seg_logit["pred"], seg_label)
+
+            if 'aux' in seg_logit:
+                aux_output = seg_logit.pop("aux")
+                loss['loss_seg_aux'] = cross_entropy(
+                    aux_output,
+                    seg_label,
+                    ignore_index=self.ignore_index) * 0.4
+                loss['acc_seg_aux'] = accuracy(aux_output, seg_label)
+
             return loss
 
         loss = dict()
