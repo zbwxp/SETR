@@ -167,5 +167,9 @@ class ATM_TPN_roll(VisionTransformerUpHead):
                     x = self.conv_4(x)
                     x = F.interpolate(
                         x, size=x.shape[-1] * 2, mode='bilinear', align_corners=self.align_corners)
+        if not self.training:
+            return atm_out
+
         atm_out.update({"aux": x})
+
         return atm_out
