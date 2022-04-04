@@ -48,8 +48,10 @@ class ATM_TPN_roll(VisionTransformerUpHead):
                  num_ziper_layer=1,
                  num_heads=12,
                  use_norm=False,
+                 low_level_layer=6,
                  **kwargs):
         super(ATM_TPN_roll, self).__init__(**kwargs)
+        self.low_level_layer = low_level_layer
         self.reverse = reverse
         self.multi_decoder = multi_decoder
         dim = kwargs['embed_dim']
@@ -79,7 +81,7 @@ class ATM_TPN_roll(VisionTransformerUpHead):
 
     def forward(self, x):
         x1 = x[-1]
-        x2 = x[6]
+        x2 = x[self.low_level_layer]
         x1 = self.input_proj_1(x1)
         x2 = self.input_proj_2(x2)
         if self.use_norm:
