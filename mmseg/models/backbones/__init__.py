@@ -33,6 +33,7 @@ from .vit_decouple_v12 import vit_decouple_v12
 from .vit_plain import vit_plain
 from .vit_v2 import vit_v2
 from .vit_v5 import vit_v5
+from .vit_mae import vit_mae
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'
