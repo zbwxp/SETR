@@ -10,6 +10,7 @@ from functools import partial
 from ..builder import HEADS
 from .decode_head import BaseDecodeHead
 from .vit_up_head import trunc_normal_
+import matplotlib.pyplot as plt
 
 class TPN_Decoder(TransformerDecoder):
     def forward(self, tgt: Tensor, memory: Tensor, tgt_mask: Optional[Tensor] = None,

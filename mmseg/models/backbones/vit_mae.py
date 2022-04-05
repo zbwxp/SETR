@@ -10,15 +10,17 @@ from torch._six import container_abcs
 
 from .helpers import load_pretrained
 from ..builder import BACKBONES
+import matplotlib.pyplot as plt
 
 # from .layers import DropPath, to_2tuple, trunc_normal_
 # 'pretrained_finetune': path + "/pretrained/jx_vit_base_p16_384-83fb41ba.pth",
+# 'pretrained_finetune': path + "/pretrained/mae_finetuned_vit_base.pth",
 
 def _cfg(url='', **kwargs):
     path = os.getcwd()
     return {
         'url': url,
-        'pretrained_finetune': path + "/pretrained/mae_finetuned_vit_base.pth",
+        'pretrained_finetune': path + "/pretrained/mae/mae_pretrain_vit_base.pth",
         'num_classes': 1000, 'input_size': (3, 224, 224), 'pool_size': None,
         'crop_pct': .9, 'interpolation': 'bicubic',
         'mean': (0.485, 0.456, 0.406), 'std': (0.229, 0.224, 0.225),

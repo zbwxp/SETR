@@ -34,6 +34,7 @@ from .vit_plain import vit_plain
 from .vit_v2 import vit_v2
 from .vit_v5 import vit_v5
 from .vit_mae import vit_mae
+from .mae import MAE
 
 __all__ = [
     'VisionTransformer', 'VIT_MLA'

@@ -1,5 +1,5 @@
 _base_ = [
-    '../../_base_/models/setr_naive_pup.py',
+    '../../_base_/models/mae.py',
     '../../_base_/datasets/ade20k.py', '../../_base_/default_runtime.py',
     '../../_base_/schedules/schedule_160k.py'
 ]
@@ -7,17 +7,24 @@ norm_cfg = dict(type='SyncBN', requires_grad=True)
 img_size = 512
 in_channels = 768
 model = dict(
+    pretrained='./pretrained/mae/mae_pretrain_vit_base.pth',
+    # '/xiangli/mae/pretrain/mae_pretrain_vit_base.pth',
+    # download the pretraining ViT-Base model: https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_base.pth
     backbone=dict(
-        model_name='vit_base_patch16_384',
-        type="vit_mae",
+        type='MAE',
+        img_size=512,
+        patch_size=16,
+        embed_dim=768,
         depth=12,
-        embed_dim=in_channels,
         num_heads=12,
-        img_size=img_size,
-        align_corners=False,
-        pos_embed_interp=True,
-        drop_rate=0.,
-        num_classes=150),
+        mlp_ratio=4,
+        qkv_bias=True,
+        use_abs_pos_emb=True, # here different
+        use_rel_pos_bias=True,
+        init_values=1.,
+        drop_path_rate=0.1,
+        out_indices=[0,1,2,3,4,5,6,7,8,9,10,11]
+    ),
     decode_head=dict(
         type='ATMHead',
         reverse=True,
@@ -33,20 +40,28 @@ model = dict(
 ),
     auxiliary_head=None,)
 
-optimizer = dict(_delete_=True, type='AdamW', lr=0.00006, betas=(0.9, 0.999), weight_decay=0.01,
-                 paramwise_cfg=dict(custom_keys={'pos_block': dict(decay_mult=0.),
-                                                 'norm': dict(decay_mult=0.),
-                                                 'head': dict(lr_mult=10.),
-                                                 }))
-
-optimizer_config = dict(
-    _delete_=True, grad_clip=dict(max_norm=35, norm_type=2))
+optimizer = dict(_delete_=True, type='AdamW', lr=1e-4, betas=(0.9, 0.999), weight_decay=0.05,
+                 constructor='LayerDecayOptimizerConstructor',
+                 paramwise_cfg=dict(num_layers=12, layer_decay_rate=0.65))
 
 lr_config = dict(_delete_=True, policy='poly',
                  warmup='linear',
                  warmup_iters=1500,
                  warmup_ratio=1e-6,
                  power=1.0, min_lr=0.0, by_epoch=False)
+
+runner = dict(type='IterBasedRunnerAmp')
+
+# do not use mmdet version fp16
+fp16 = None
+optimizer_config = dict(
+    type="DistOptimizerHook",
+    update_interval=1,
+    grad_clip=None,
+    coalesce=True,
+    bucket_size_mb=-1,
+    use_fp16=True,
+)
 
 crop_size = (img_size, img_size)
 test_cfg = dict(mode='slide', crop_size=crop_size, stride=(341, 341))
