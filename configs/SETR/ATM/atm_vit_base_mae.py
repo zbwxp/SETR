@@ -20,6 +20,7 @@ model = dict(
         num_classes=150),
     decode_head=dict(
         type='ATMHead',
+        use_stages=[11],
         reverse=True,
         in_channels=in_channels,
         embed_dim=in_channels // 2,
@@ -33,7 +34,7 @@ model = dict(
 ),
     auxiliary_head=None,)
 
-optimizer = dict(_delete_=True, type='AdamW', lr=0.00006, betas=(0.9, 0.999), weight_decay=0.01,
+optimizer = dict(_delete_=True, type='AdamW', lr=0.00002, betas=(0.9, 0.999), weight_decay=0.01,
                  paramwise_cfg=dict(custom_keys={'pos_block': dict(decay_mult=0.),
                                                  'norm': dict(decay_mult=0.),
                                                  'head': dict(lr_mult=10.),
